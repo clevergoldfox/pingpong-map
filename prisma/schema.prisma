@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  rating    Int      @default(500)
+  coins     Int      @default(0)
+  role      Role     @default(PLAYER)
+  createdAt DateTime @default(now())
+
+  tournaments TournamentParticipant[]
+  matches1    Match[]                 @relation("MatchPlayer1")
+  matches2    Match[]                 @relation("MatchPlayer2")
+}
+
+enum Role {
+  ADMIN
+  ORGANIZER
+  PLAYER
+}
+
+model Tournament {
+  id        String           @id @default(uuid())
+  name      String
+  location  String
+  status    TournamentStatus
+  startDate DateTime
+  createdAt DateTime         @default(now())
+
+  categories   Category[]
+  participants TournamentParticipant[]
+  matches      Match[]
+}
+
+enum TournamentStatus {
+  DRAFT
+  PUBLISHED
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  CHECKIN
+  STARTED
+  FINISHED
+  ARCHIVED
+}
+
+model Category {
+  id           String            @id @default(uuid())
+  tournamentId String
+  type         CategoryType
+  format       CompetitionFormat
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+}
+
+enum CategoryType {
+  SINGLES
+  DOUBLES
+  TEAM
+}
+
+enum CompetitionFormat {
+  ROUND_ROBIN
+  SELECT_ROUND
+  TOURNAMENT
+  GROUP_TO_TOURNAMENT
+}
+
+model Match {
+  id           String      @id @default(uuid())
+  tournamentId String
+  categoryId   String
+  player1Id    String
+  player2Id    String?
+  winnerId     String?
+  status       MatchStatus
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+
+  player1 User  @relation("MatchPlayer1", fields: [player1Id], references: [id])
+  player2 User? @relation("MatchPlayer2", fields: [player2Id], references: [id])
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  FORFEIT
+}
+
+model TournamentParticipant {
+  id           String  @id @default(uuid())
+  tournamentId String
+  userId       String
+  checkedIn    Boolean @default(false)
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([tournamentId, userId])
+}
