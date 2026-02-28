@@ -62,6 +62,7 @@ model Category {
   tournamentId String
   type         CategoryType
   format       CompetitionFormat
+  roundCount   Int?
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
 }
@@ -101,11 +102,21 @@ enum MatchStatus {
   FORFEIT
 }
 
+enum JoinStatus {
+  APPLIED
+  PAID           // 支払い完了（大会ページ閲覧可の前提）
+  CANCELED       // キャンセル
+  FORFEITED      // 棄権（チェックインしない等）
+}
+
 model TournamentParticipant {
   id           String  @id @default(uuid())
   tournamentId String
   userId       String
   checkedIn    Boolean @default(false)
+  joinStatus   JoinStatus @default(APPLIED)
+  joinedAt     DateTime   @default(now())
+  canceledAt   DateTime?
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   user       User       @relation(fields: [userId], references: [id])

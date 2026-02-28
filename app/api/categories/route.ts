@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       tournamentId: body.tournamentId,
       type: body.type,
       format: body.format,
+      roundCount: body.roundCount ?? null,
     },
   })
 
