@@ -62,7 +62,8 @@ model Category {
   tournamentId String
   type         CategoryType
   format       CompetitionFormat
-  roundCount   Int?
+  roundCount Int @default(3)
+  currentRound Int @default(0)
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
 }
