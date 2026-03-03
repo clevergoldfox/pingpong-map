@@ -148,6 +148,41 @@ export async function POST(
                         }
                     }
 
+                    if (p1.id === p2.id) {
+                        throw new Error("Invalid match: player cannot play against themselves.")
+                    }
+
+                    const MAX_MATCHES_BETWEEN_SAME_PLAYERS = 1
+
+                    const previousMeetings = await tx.match.count({
+                        where: {
+                            tournamentId: match.tournamentId,
+                            OR: [
+                                {
+                                    player1Id: p1.id,
+                                    player2Id: p2.id,
+                                },
+                                {
+                                    player1Id: p2.id,
+                                    player2Id: p1.id,
+                                },
+                            ],
+                            ratingApplied: true,
+                        },
+                    })
+
+                    if (previousMeetings > MAX_MATCHES_BETWEEN_SAME_PLAYERS) {
+                        throw new Error("Rating abuse detected: players exceeded allowed rematches.")
+                    }
+
+                    if (!match.player2Id) {
+                        return
+                    }
+
+                    if (match.status === "FORFEIT") {
+                        return
+                    }
+
                     // 🔥 APPLY RATING SAFELY
                     const freshMatch = await tx.match.findUnique({
                         where: { id: matchId },
@@ -174,9 +209,13 @@ export async function POST(
                             const p1Win = freshMatch.winnerId === p1.id ? 1 : 0
                             const p2Win = freshMatch.winnerId === p2.id ? 1 : 0
 
-                            const newP1 = calculateElo(p1.rating, p2.rating, p1Win)
-                            const newP2 = calculateElo(p2.rating, p1.rating, p2Win)
+                            const oldP1 = p1.rating
+                            const oldP2 = p2.rating
 
+                            const newP1 = calculateElo(oldP1, oldP2, p1Win)
+                            const newP2 = calculateElo(oldP2, oldP1, p2Win)
+
+                            // Update ratings
                             await tx.user.update({
                                 where: { id: p1.id },
                                 data: { rating: newP1 },
@@ -187,6 +226,28 @@ export async function POST(
                                 data: { rating: newP2 },
                             })
 
+                            // 🔥 Store rating history (audit trail)
+                            await tx.ratingHistory.create({
+                                data: {
+                                    userId: p1.id,
+                                    matchId,
+                                    oldRating: oldP1,
+                                    newRating: newP1,
+                                    delta: newP1 - oldP1,
+                                },
+                            })
+
+                            await tx.ratingHistory.create({
+                                data: {
+                                    userId: p2.id,
+                                    matchId,
+                                    oldRating: oldP2,
+                                    newRating: newP2,
+                                    delta: newP2 - oldP2,
+                                },
+                            })
+
+                            // Mark rating applied
                             await tx.match.update({
                                 where: { id: matchId },
                                 data: { ratingApplied: true },

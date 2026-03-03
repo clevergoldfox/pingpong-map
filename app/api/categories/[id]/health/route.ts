@@ -7,6 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: categoryId } = await params
+  const totalRatingChanges = await prisma.ratingHistory.count()
 
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
