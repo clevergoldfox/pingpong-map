@@ -68,6 +68,7 @@ model Category {
   isLocked Boolean @default(false)
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
+  matches     Match[]   @relation("CategoryMatches")
 }
 
 enum CategoryType {
@@ -113,6 +114,8 @@ model Match {
   updatedAt   DateTime               @updatedAt
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
+  category   Category   @relation("CategoryMatches", fields: [categoryId], references: [id])
+  ratingApplied Boolean @default(false)
 
   player1 User  @relation("MatchPlayer1", fields: [player1Id], references: [id])
   player2 User? @relation("MatchPlayer2", fields: [player2Id], references: [id])
