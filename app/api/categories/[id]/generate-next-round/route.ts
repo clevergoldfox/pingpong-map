@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { calculateStandings } from "@/lib/standings"
 
 /**
- * Swiss pairing engine (MVP production-safe)
+ * Swiss pairing engine (MVP hardened)
  */
 function generateSwissRound(
   sortedPlayers: string[],
@@ -18,7 +18,7 @@ function generateSwissRound(
 
   const used = new Set<string>()
 
-  // Precompute played matches for O(1) lookup
+  // Only FINISHED matches count for rematch prevention
   const playedSet = new Set(
     previousMatches
       .filter(m => m.player2Id)
@@ -28,10 +28,9 @@ function generateSwissRound(
   const hasPlayed = (a: string, b: string) =>
     playedSet.has([a, b].sort().join("_"))
 
-  // Handle BYE if odd number of players
+  // BYE handling
   if (sortedPlayers.length % 2 === 1) {
     const byePlayer = sortedPlayers[sortedPlayers.length - 1]
-
     used.add(byePlayer)
 
     matches.push({
@@ -65,7 +64,7 @@ function generateSwissRound(
       }
     }
 
-    // Fallback pairing if no clean opponent found
+    // fallback pairing
     if (!paired) {
       const fallback = sortedPlayers.find(
         p => p !== p1 && !used.has(p)
@@ -116,9 +115,25 @@ export async function POST(
     )
   }
 
+  // 🔒 LOCK if Swiss already complete
   if (category.currentRound >= category.roundCount) {
     return NextResponse.json(
-      { error: "All rounds already generated" },
+      { error: "All Swiss rounds already generated" },
+      { status: 400 }
+    )
+  }
+
+  // 🔒 Prevent Swiss after Finals started
+  const finalsStarted = await prisma.match.count({
+    where: {
+      categoryId,
+      roundNumber: category.roundCount + 1,
+    },
+  })
+
+  if (finalsStarted > 0) {
+    return NextResponse.json(
+      { error: "Finals already started. Swiss locked." },
       { status: 400 }
     )
   }
@@ -134,15 +149,17 @@ export async function POST(
     )
   }
 
-  // Get all previous matches
+  // Only FINISHED matches used for standings + rematch
   const previousMatches = await prisma.match.findMany({
-    where: { categoryId },
+    where: {
+      categoryId,
+      status: "FINISHED",
+    },
   })
 
-  // Calculate standings
   const standings = calculateStandings(previousMatches)
 
-  // Ensure all players are included (important for round 1)
+  // Include zero-match players
   const existing = new Set(standings.map(s => s.userId))
 
   for (const userId of players) {
@@ -156,7 +173,6 @@ export async function POST(
     }
   }
 
-  // Sort standings
   standings.sort((a, b) => {
     if (b.points !== a.points) return b.points - a.points
     if (b.wins !== a.wins) return b.wins - a.wins
@@ -164,7 +180,6 @@ export async function POST(
   })
 
   const sortedPlayers = standings.map(s => s.userId)
-
   const nextRound = category.currentRound + 1
 
   const swissMatches = generateSwissRound(
@@ -180,21 +195,23 @@ export async function POST(
     )
   }
 
-  await prisma.match.createMany({
-    data: swissMatches.map(m => ({
-      tournamentId: category.tournamentId,
-      categoryId,
-      player1Id: m.player1Id,
-      player2Id: m.player2Id,
-      status: "SCHEDULED",
-      roundNumber: m.roundNumber,
-    })),
-  })
-
-  await prisma.category.update({
-    where: { id: categoryId },
-    data: { currentRound: nextRound },
-  })
+  // 🔒 Transaction = safe from double-click / race
+  await prisma.$transaction([
+    prisma.match.createMany({
+      data: swissMatches.map(m => ({
+        tournamentId: category.tournamentId,
+        categoryId,
+        player1Id: m.player1Id,
+        player2Id: m.player2Id,
+        status: "SCHEDULED",
+        roundNumber: m.roundNumber,
+      })),
+    }),
+    prisma.category.update({
+      where: { id: categoryId },
+      data: { currentRound: nextRound },
+    }),
+  ])
 
   return NextResponse.json({
     round: nextRound,

@@ -62,8 +62,10 @@ model Category {
   tournamentId String
   type         CategoryType
   format       CompetitionFormat
-  roundCount Int @default(3)
-  currentRound Int @default(0)
+  roundCount   Int               @default(3)
+  currentRound Int               @default(0)
+
+  isLocked Boolean @default(false)
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
 }
@@ -81,6 +83,14 @@ enum CompetitionFormat {
   GROUP_TO_TOURNAMENT
 }
 
+enum ResultStatus {
+  NONE // no submissions
+  PENDING
+  SUBMITTED
+  IN_PROGRESS // submissions exist, not yet agreed
+  LOCKED // match result locked (cannot edit)
+}
+
 model Match {
   id           String      @id @default(uuid())
   tournamentId String
@@ -89,7 +99,18 @@ model Match {
   player2Id    String?
   winnerId     String?
   status       MatchStatus
-  roundNumber  Int?
+
+  // NEW:
+  version      Int          @default(0)
+  resultStatus ResultStatus @default(NONE)
+
+  // Store canonical scores once agreed/locked
+  // JSON structure example: [{game:1, p1:11, p2:8}, ...]
+  scoreJson   Json?
+  roundNumber Int?
+  submissions MatchScoreSubmission[]
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
 
@@ -106,16 +127,16 @@ enum MatchStatus {
 
 enum JoinStatus {
   APPLIED
-  PAID           // 支払い完了（大会ページ閲覧可の前提）
-  CANCELED       // キャンセル
-  FORFEITED      // 棄権（チェックインしない等）
+  PAID // 支払い完了（大会ページ閲覧可の前提）
+  CANCELED // キャンセル
+  FORFEITED // 棄権（チェックインしない等）
 }
 
 model TournamentParticipant {
-  id           String  @id @default(uuid())
+  id           String     @id @default(uuid())
   tournamentId String
   userId       String
-  checkedIn    Boolean @default(false)
+  checkedIn    Boolean    @default(false)
   joinStatus   JoinStatus @default(APPLIED)
   joinedAt     DateTime   @default(now())
   canceledAt   DateTime?
@@ -124,4 +145,18 @@ model TournamentParticipant {
   user       User       @relation(fields: [userId], references: [id])
 
   @@unique([tournamentId, userId])
+}
+
+model MatchScoreSubmission {
+  id              String   @id @default(uuid())
+  matchId         String
+  submittedById   String
+  clientRequestId String // idempotency key per device action
+  scoreJson       Json
+  createdAt       DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id])
+
+  @@unique([matchId, submittedById]) // 1 active submission per user (MVP)
+  @@unique([matchId, clientRequestId]) // idempotency
 }

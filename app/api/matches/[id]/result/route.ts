@@ -38,3 +38,35 @@ export async function PATCH(
 
   return NextResponse.json({ success: true })
 }
+
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: matchId } = await params
+
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: {
+      id: true,
+      status: true,
+      resultStatus: true,
+      winnerId: true,
+      scoreJson: true,
+      player1Id: true,
+      player2Id: true,
+    },
+  })
+  if (!match) return NextResponse.json({ error: "Match not found" }, { status: 404 })
+
+  const subs = await prisma.matchScoreSubmission.findMany({
+    where: { matchId },
+    select: { submittedById: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+  })
+
+  return NextResponse.json({
+    match,
+    submissions: subs,
+  })
+}
