@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import { decideWinnerFromScores, normalizeScoreJson, stableStringify, type ScoreJson } from "@/lib/result"
 import { calculateElo } from "@/lib/rating"
+import { calculateTier } from "@/lib/tier"
 
 type Body = {
     userId: string
@@ -227,20 +228,25 @@ export async function POST(
                             const newSeasonP1 = calculateElo(p1.seasonRating, p2.seasonRating, p1Win)
                             const newSeasonP2 = calculateElo(p2.seasonRating, p1.seasonRating, p2Win)
 
-                            // Update users
+                            // calculate tiers
+                            const newTierP1 = calculateTier(newSeasonP1)
+                            const newTierP2 = calculateTier(newSeasonP2)
+
                             await tx.user.update({
                                 where: { id: p1.id },
                                 data: {
-                                    rating: newLifetimeP1,
-                                    seasonRating: newSeasonP1,
+                                    rating: newP1,               // lifetime rating
+                                    seasonRating: newSeasonP1,   // seasonal rating
+                                    tier: newTierP1,             // NEW
                                 },
                             })
 
                             await tx.user.update({
                                 where: { id: p2.id },
                                 data: {
-                                    rating: newLifetimeP2,
+                                    rating: newP2,
                                     seasonRating: newSeasonP2,
+                                    tier: newTierP2,
                                 },
                             })
 

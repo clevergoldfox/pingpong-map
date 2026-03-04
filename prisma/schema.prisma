@@ -19,6 +19,7 @@ model User {
   phone     String   @unique
   rating    Int      @default(500)
   seasonRating  Int      @default(500)  // current season rating
+  tier         Tier @default(BRONZE)
   coins     Int      @default(0)
   role      Role     @default(PLAYER)
   createdAt DateTime @default(now())
@@ -198,4 +199,21 @@ model Season {
   createdAt DateTime @default(now())
 
   ratingHistories RatingHistory[]
+}
+
+enum Tier {
+  BRONZE
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+  MASTER
+}
+
+model TierHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  oldTier   Tier
+  newTier   Tier
+  createdAt DateTime @default(now())
 }
