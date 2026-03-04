@@ -183,7 +183,8 @@ export async function POST(
                         return
                     }
 
-                    // 🔥 APPLY RATING SAFELY
+                    // 🔥 APPLY RATING SAFELY WITH SEASON SUPPORT
+
                     const freshMatch = await tx.match.findUnique({
                         where: { id: matchId },
                         select: {
@@ -195,45 +196,63 @@ export async function POST(
                     })
 
                     if (freshMatch && !freshMatch.ratingApplied) {
+
+                        const activeSeason = await tx.season.findFirst({
+                            where: { isActive: true },
+                        })
+
+                        if (!activeSeason) {
+                            throw new Error("No active season found.")
+                        }
+
                         const p1 = await tx.user.findUnique({
                             where: { id: freshMatch.player1Id },
-                            select: { id: true, rating: true },
+                            select: { id: true, rating: true, seasonRating: true },
                         })
 
                         const p2 = await tx.user.findUnique({
                             where: { id: freshMatch.player2Id! },
-                            select: { id: true, rating: true },
+                            select: { id: true, rating: true, seasonRating: true },
                         })
 
                         if (p1 && p2) {
                             const p1Win = freshMatch.winnerId === p1.id ? 1 : 0
                             const p2Win = freshMatch.winnerId === p2.id ? 1 : 0
 
-                            const oldP1 = p1.rating
-                            const oldP2 = p2.rating
+                            // Lifetime rating
+                            const newLifetimeP1 = calculateElo(p1.rating, p2.rating, p1Win)
+                            const newLifetimeP2 = calculateElo(p2.rating, p1.rating, p2Win)
 
-                            const newP1 = calculateElo(oldP1, oldP2, p1Win)
-                            const newP2 = calculateElo(oldP2, oldP1, p2Win)
+                            // Seasonal rating
+                            const newSeasonP1 = calculateElo(p1.seasonRating, p2.seasonRating, p1Win)
+                            const newSeasonP2 = calculateElo(p2.seasonRating, p1.seasonRating, p2Win)
 
-                            // Update ratings
+                            // Update users
                             await tx.user.update({
                                 where: { id: p1.id },
-                                data: { rating: newP1 },
+                                data: {
+                                    rating: newLifetimeP1,
+                                    seasonRating: newSeasonP1,
+                                },
                             })
 
                             await tx.user.update({
                                 where: { id: p2.id },
-                                data: { rating: newP2 },
+                                data: {
+                                    rating: newLifetimeP2,
+                                    seasonRating: newSeasonP2,
+                                },
                             })
 
-                            // 🔥 Store rating history (audit trail)
+                            // Store rating history with seasonId
                             await tx.ratingHistory.create({
                                 data: {
                                     userId: p1.id,
                                     matchId,
-                                    oldRating: oldP1,
-                                    newRating: newP1,
-                                    delta: newP1 - oldP1,
+                                    seasonId: activeSeason.id,
+                                    oldRating: p1.seasonRating,
+                                    newRating: newSeasonP1,
+                                    delta: newSeasonP1 - p1.seasonRating,
                                 },
                             })
 
@@ -241,13 +260,13 @@ export async function POST(
                                 data: {
                                     userId: p2.id,
                                     matchId,
-                                    oldRating: oldP2,
-                                    newRating: newP2,
-                                    delta: newP2 - oldP2,
+                                    seasonId: activeSeason.id,
+                                    oldRating: p2.seasonRating,
+                                    newRating: newSeasonP2,
+                                    delta: newSeasonP2 - p2.seasonRating,
                                 },
                             })
 
-                            // Mark rating applied
                             await tx.match.update({
                                 where: { id: matchId },
                                 data: { ratingApplied: true },

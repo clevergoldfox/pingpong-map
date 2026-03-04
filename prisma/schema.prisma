@@ -18,6 +18,7 @@ model User {
   name      String
   phone     String   @unique
   rating    Int      @default(500)
+  seasonRating  Int      @default(500)  // current season rating
   coins     Int      @default(0)
   role      Role     @default(PLAYER)
   createdAt DateTime @default(now())
@@ -173,6 +174,7 @@ model RatingHistory {
   id        String   @id @default(uuid())
   userId    String
   matchId   String
+  seasonId  String
   oldRating Int
   newRating Int
   delta     Int
@@ -180,7 +182,20 @@ model RatingHistory {
 
   user  User  @relation(fields: [userId], references: [id])
   match Match @relation(fields: [matchId], references: [id])
+  season Season @relation(fields: [seasonId], references: [id])
   @@index([userId])
   @@index([matchId])
+  @@index([seasonId])
   @@index([createdAt])
+}
+
+model Season {
+  id        String   @id @default(uuid())
+  name      String
+  startAt   DateTime
+  endAt     DateTime
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  ratingHistories RatingHistory[]
 }
