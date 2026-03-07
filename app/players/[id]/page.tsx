@@ -1,7 +1,18 @@
+import RatingGraph from "@/components/RatingGraph"
+
 async function getPlayer(id: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/players/${id}`, {
-    cache: "no-store",
-  })
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/players/${id}`,
+    { cache: "no-store" }
+  )
+  return res.json()
+}
+
+async function getHistory(id: string) {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/players/${id}/rating-history`,
+    { cache: "no-store" }
+  )
   return res.json()
 }
 
@@ -11,6 +22,7 @@ export default async function PlayerPage(
   const { id } = await params
 
   const player = await getPlayer(id)
+  const history = await getHistory(id)
 
   if (!player) return <div>Player not found</div>
 
@@ -26,6 +38,12 @@ export default async function PlayerPage(
         <div>Wins: {player.wins}</div>
         <div>Losses: {player.losses}</div>
       </div>
+
+      <h2 className="text-xl font-semibold mt-8 mb-4">
+        Rating Progress
+      </h2>
+
+      <RatingGraph data={history} />
     </div>
   )
 }
