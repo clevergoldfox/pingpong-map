@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 import { NextResponse } from "next/server"
 
 export async function POST(
@@ -34,7 +35,7 @@ export async function POST(
     return NextResponse.json({ error: "Not enough players" }, { status: 400 })
   }
 
-  const matches = []
+  const matches: Prisma.MatchCreateManyInput[] = []
 
   const shuffled = [...players].sort(() => Math.random() - 0.5)
 

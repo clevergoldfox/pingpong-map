@@ -149,41 +149,6 @@ export async function POST(
                         }
                     }
 
-                    if (p1.id === p2.id) {
-                        throw new Error("Invalid match: player cannot play against themselves.")
-                    }
-
-                    const MAX_MATCHES_BETWEEN_SAME_PLAYERS = 1
-
-                    const previousMeetings = await tx.match.count({
-                        where: {
-                            tournamentId: match.tournamentId,
-                            OR: [
-                                {
-                                    player1Id: p1.id,
-                                    player2Id: p2.id,
-                                },
-                                {
-                                    player1Id: p2.id,
-                                    player2Id: p1.id,
-                                },
-                            ],
-                            ratingApplied: true,
-                        },
-                    })
-
-                    if (previousMeetings > MAX_MATCHES_BETWEEN_SAME_PLAYERS) {
-                        throw new Error("Rating abuse detected: players exceeded allowed rematches.")
-                    }
-
-                    if (!match.player2Id) {
-                        return
-                    }
-
-                    if (match.status === "FORFEIT") {
-                        return
-                    }
-
                     // 🔥 APPLY RATING SAFELY WITH SEASON SUPPORT
 
                     const freshMatch = await tx.match.findUnique({
@@ -206,45 +171,45 @@ export async function POST(
                             throw new Error("No active season found.")
                         }
 
-                        const p1 = await tx.user.findUnique({
+                        const user1 = await tx.user.findUnique({
                             where: { id: freshMatch.player1Id },
                             select: { id: true, rating: true, seasonRating: true },
                         })
 
-                        const p2 = await tx.user.findUnique({
+                        const user2 = await tx.user.findUnique({
                             where: { id: freshMatch.player2Id! },
                             select: { id: true, rating: true, seasonRating: true },
                         })
 
-                        if (p1 && p2) {
-                            const p1Win = freshMatch.winnerId === p1.id ? 1 : 0
-                            const p2Win = freshMatch.winnerId === p2.id ? 1 : 0
+                        if (user1 && user2) {
+                            const p1Win = freshMatch.winnerId === user1.id ? 1 : 0
+                            const p2Win = freshMatch.winnerId === user2.id ? 1 : 0
 
                             // Lifetime rating
-                            const newLifetimeP1 = calculateElo(p1.rating, p2.rating, p1Win)
-                            const newLifetimeP2 = calculateElo(p2.rating, p1.rating, p2Win)
+                            const newLifetimeP1 = calculateElo(user1.rating, user2.rating, p1Win)
+                            const newLifetimeP2 = calculateElo(user2.rating, user1.rating, p2Win)
 
                             // Seasonal rating
-                            const newSeasonP1 = calculateElo(p1.seasonRating, p2.seasonRating, p1Win)
-                            const newSeasonP2 = calculateElo(p2.seasonRating, p1.seasonRating, p2Win)
+                            const newSeasonP1 = calculateElo(user1.seasonRating, user2.seasonRating, p1Win)
+                            const newSeasonP2 = calculateElo(user2.seasonRating, user1.seasonRating, p2Win)
 
                             // calculate tiers
                             const newTierP1 = calculateTier(newSeasonP1)
                             const newTierP2 = calculateTier(newSeasonP2)
 
                             await tx.user.update({
-                                where: { id: p1.id },
+                                where: { id: user1.id },
                                 data: {
-                                    rating: newP1,               // lifetime rating
-                                    seasonRating: newSeasonP1,   // seasonal rating
-                                    tier: newTierP1,             // NEW
+                                    rating: newLifetimeP1,
+                                    seasonRating: newSeasonP1,
+                                    tier: newTierP1,
                                 },
                             })
 
                             await tx.user.update({
-                                where: { id: p2.id },
+                                where: { id: user2.id },
                                 data: {
-                                    rating: newP2,
+                                    rating: newLifetimeP2,
                                     seasonRating: newSeasonP2,
                                     tier: newTierP2,
                                 },
@@ -253,23 +218,23 @@ export async function POST(
                             // Store rating history with seasonId
                             await tx.ratingHistory.create({
                                 data: {
-                                    userId: p1.id,
+                                    userId: user1.id,
                                     matchId,
                                     seasonId: activeSeason.id,
-                                    oldRating: p1.seasonRating,
+                                    oldRating: user1.seasonRating,
                                     newRating: newSeasonP1,
-                                    delta: newSeasonP1 - p1.seasonRating,
+                                    delta: newSeasonP1 - user1.seasonRating,
                                 },
                             })
 
                             await tx.ratingHistory.create({
                                 data: {
-                                    userId: p2.id,
+                                    userId: user2.id,
                                     matchId,
                                     seasonId: activeSeason.id,
-                                    oldRating: p2.seasonRating,
+                                    oldRating: user2.seasonRating,
                                     newRating: newSeasonP2,
-                                    delta: newSeasonP2 - p2.seasonRating,
+                                    delta: newSeasonP2 - user2.seasonRating,
                                 },
                             })
 
