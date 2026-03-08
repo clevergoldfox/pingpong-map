@@ -13,7 +13,7 @@ export default function RatingGraph({ data }: { data: any[] }) {
     if (!data || data.length === 0) {
         return (
             <div style={{ height: 200 }}>
-                No rating history yet
+                まだレーティング履歴がありません
             </div>
         )
     }

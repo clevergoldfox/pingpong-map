@@ -22,7 +22,7 @@ export default async function MatchesPage(
     <div>
 
       <h1 className="text-2xl mb-6">
-        Matches
+        試合一覧
       </h1>
 
       {matches.map((m:any)=>(
@@ -31,7 +31,7 @@ export default async function MatchesPage(
           {m.player1Id} vs {m.player2Id}
 
           <div>
-            Round {m.roundNumber}
+            第{m.roundNumber}ラウンド
           </div>
 
         </div>

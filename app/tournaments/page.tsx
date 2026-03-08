@@ -14,7 +14,7 @@ export default async function TournamentsPage() {
 
   return (
     <div>
-      <h1 className="text-3xl mb-6">Tournaments</h1>
+      <h1 className="text-3xl mb-6">大会一覧</h1>
 
       <div className="space-y-3">
         {tournaments.map((t:any)=>(

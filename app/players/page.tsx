@@ -15,7 +15,7 @@ export default async function PlayersPage(){
   return(
     <div>
 
-      <h1 className="text-3xl mb-6">Players</h1>
+      <h1 className="text-3xl mb-6">プレイヤー一覧</h1>
 
       <div className="grid grid-cols-3 gap-4">
 

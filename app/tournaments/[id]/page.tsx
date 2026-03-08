@@ -34,7 +34,7 @@ export default async function TournamentPage(
                 <div>
                     <h1 className="text-3xl font-bold">{tournament.name}</h1>
                     <p className="text-sm text-gray-400">
-                        Status: {tournament.status}
+                        ステータス: {tournament.status}
                     </p>
                 </div>
                 <div className="flex gap-3 items-center">
@@ -43,7 +43,7 @@ export default async function TournamentPage(
                             type="submit"
                             className="border border-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-900"
                         >
-                            Start tournament
+                            大会開始
                         </button>
                     </form>
                     <TournamentStatusControls
@@ -56,23 +56,23 @@ export default async function TournamentPage(
             <div className="grid grid-cols-2 gap-4">
 
                 <Link href={`/tournaments/${id}/register`} className="border p-4">
-                    Register Players
+                    参加者登録
                 </Link>
 
                 <Link href={`/tournaments/${id}/checkin`} className="border p-4">
-                    Player Check-in
+                    プレイヤーチェックイン
                 </Link>
 
                 <Link href={`/tournaments/${id}/matches`} className="border p-4">
-                    Matches
+                    試合一覧
                 </Link>
 
                 <Link href={`/tournaments/${id}/standings`} className="border p-4">
-                    Standings
+                    順位表
                 </Link>
 
                 <Link href={`/tournaments/${id}/categories`} className="border p-4">
-                    Categories &amp; Rounds
+                    カテゴリ・ラウンド管理
                 </Link>
 
             </div>
@@ -80,14 +80,14 @@ export default async function TournamentPage(
             {/* Standings */}
 
             <section>
-                <h2 className="text-xl mb-3">Standings</h2>
+                <h2 className="text-xl mb-3">順位表</h2>
 
                 <table className="w-full border border-gray-700">
                     <thead>
                         <tr>
-                            <th>Rank</th>
-                            <th>Player</th>
-                            <th>Points</th>
+                            <th>順位</th>
+                            <th>プレイヤー</th>
+                            <th>ポイント</th>
                         </tr>
                     </thead>
 
@@ -111,7 +111,7 @@ export default async function TournamentPage(
             {/* Matches */}
 
             <section>
-                <h2 className="text-xl mb-3">Matches</h2>
+                <h2 className="text-xl mb-3">試合一覧</h2>
 
                 <div className="space-y-2">
                     {matches.map((m: any) => (
@@ -122,7 +122,7 @@ export default async function TournamentPage(
                         >
                             {m.player1Id} vs {m.player2Id}
                             <span className="ml-4 text-gray-400">
-                                Round {m.roundNumber}
+                                第{m.roundNumber}ラウンド
                             </span>
                         </Link>
                     ))}

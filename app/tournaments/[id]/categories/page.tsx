@@ -60,12 +60,12 @@ export default function TournamentCategoriesPage(
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data?.error ?? "Failed to load tournament")
+        throw new Error(data?.error ?? "大会情報の読み込みに失敗しました")
       }
 
       setTournament(data)
     } catch (e: any) {
-      setError(e.message ?? "Failed to load tournament")
+      setError(e.message ?? "大会情報の読み込みに失敗しました")
     } finally {
       setLoading(false)
     }
@@ -94,7 +94,7 @@ export default function TournamentCategoriesPage(
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        throw new Error(data?.error ?? `Action failed (${endpoint})`)
+        throw new Error(data?.error ?? `アクションに失敗しました (${endpoint})`)
       }
 
       setActionMessage(
@@ -102,7 +102,7 @@ export default function TournamentCategoriesPage(
       )
       await loadTournament()
     } catch (e: any) {
-      setError(e.message ?? "Action failed")
+      setError(e.message ?? "アクションに失敗しました")
     } finally {
       setWorkingCategory(null)
     }
@@ -116,7 +116,7 @@ export default function TournamentCategoriesPage(
       )
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data?.error ?? "Health check failed")
+        throw new Error(data?.error ?? "ヘルスチェックに失敗しました")
       }
       setHealthByCategory((prev) => ({
         ...prev,
@@ -135,7 +135,7 @@ export default function TournamentCategoriesPage(
       )
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data?.error ?? "Champion lookup failed")
+        throw new Error(data?.error ?? "優勝者の取得に失敗しました")
       }
       setChampionByCategory((prev) => ({
         ...prev,
@@ -171,18 +171,18 @@ export default function TournamentCategoriesPage(
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data?.error ?? "Failed to create category")
+        throw new Error(data?.error ?? "カテゴリの作成に失敗しました")
       }
 
-      setActionMessage("Category created")
+      setActionMessage("カテゴリを作成しました")
       await loadTournament()
     } catch (e: any) {
-      setError(e.message ?? "Failed to create category")
+      setError(e.message ?? "カテゴリの作成に失敗しました")
     }
   }
 
   if (loading) {
-    return <div>Loading categories...</div>
+    return <div>カテゴリを読み込み中...</div>
   }
 
   if (error) {
@@ -190,25 +190,25 @@ export default function TournamentCategoriesPage(
   }
 
   if (!tournament) {
-    return <div>Not found</div>
+    return <div>大会が見つかりません</div>
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold mb-1">
-          Categories for {tournament.name}
+          {tournament.name} のカテゴリ
         </h1>
         <p className="text-sm text-gray-400">
-          Manage Swiss rounds, finals, and finalization per category.
+          各カテゴリごとにスイスラウンドや決勝トーナメントの生成・確定を行います。
         </p>
       </div>
 
       <section className="border border-gray-800 rounded p-4 space-y-3">
-        <h2 className="text-lg font-semibold">Create category</h2>
+        <h2 className="text-lg font-semibold">カテゴリを作成</h2>
         <div className="grid gap-3 md:grid-cols-3 text-sm">
           <div className="flex flex-col gap-1">
-            <label>Type</label>
+            <label>種別</label>
             <select
               className="border border-gray-700 bg-black px-3 py-2 rounded"
               value={newType}
@@ -220,7 +220,7 @@ export default function TournamentCategoriesPage(
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label>Format</label>
+            <label>形式</label>
             <select
               className="border border-gray-700 bg-black px-3 py-2 rounded"
               value={newFormat}
@@ -235,12 +235,12 @@ export default function TournamentCategoriesPage(
             </select>
           </div>
           <div className="flex flex-col gap-1">
-            <label>Round count (for Swiss)</label>
+            <label>ラウンド数（スイス用）</label>
             <input
               className="border border-gray-700 bg-black px-3 py-2 rounded"
               value={newRoundCount}
               onChange={(e) => setNewRoundCount(e.target.value)}
-              placeholder="e.g. 3"
+              placeholder="例: 3"
             />
           </div>
         </div>
@@ -249,7 +249,7 @@ export default function TournamentCategoriesPage(
           onClick={createCategory}
           className="mt-2 border border-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-900"
         >
-          Create category
+          カテゴリを作成
         </button>
       </section>
 
@@ -259,11 +259,11 @@ export default function TournamentCategoriesPage(
       {error && <div className="text-red-400 text-sm">{error}</div>}
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Existing categories</h2>
+        <h2 className="text-lg font-semibold">既存のカテゴリ</h2>
 
         {tournament.categories.length === 0 ? (
           <div className="text-sm text-gray-400">
-            No categories yet. Create one above.
+            まだカテゴリがありません。上のフォームから作成してください。
           </div>
         ) : (
           <div className="space-y-4">
@@ -282,9 +282,8 @@ export default function TournamentCategoriesPage(
                         {c.type} / {c.format}
                       </div>
                       <div className="text-gray-400 text-xs">
-                        Round {c.currentRound} of{" "}
-                        {c.roundCount ?? "?"} •{" "}
-                        {c.isLocked ? "LOCKED" : "OPEN"}
+                        第 {c.currentRound} / {c.roundCount ?? "?"} ラウンド •{" "}
+                        {c.isLocked ? "ロック済み" : "進行中"}
                       </div>
                     </div>
                   </div>
@@ -300,7 +299,7 @@ export default function TournamentCategoriesPage(
                       }
                       className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
                     >
-                      Generate all rounds (SELECT_ROUND)
+                      全ラウンドを生成（SELECT_ROUND）
                     </button>
                     <button
                       type="button"
@@ -312,7 +311,7 @@ export default function TournamentCategoriesPage(
                       }
                       className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
                     >
-                      Generate next Swiss round
+                      次のスイスラウンドを生成
                     </button>
                     <button
                       type="button"
@@ -326,7 +325,7 @@ export default function TournamentCategoriesPage(
                       }
                       className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
                     >
-                      Generate TOP4 finals
+                      TOP4 決勝トーナメントを生成
                     </button>
                     <button
                       type="button"
@@ -340,7 +339,7 @@ export default function TournamentCategoriesPage(
                       }
                       className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
                     >
-                      Generate TOP8 finals
+                      TOP8 決勝トーナメントを生成
                     </button>
                     <button
                       type="button"
@@ -352,7 +351,7 @@ export default function TournamentCategoriesPage(
                       }
                       className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
                     >
-                      Generate final match
+                      決勝戦を生成
                     </button>
                     <button
                       type="button"
@@ -364,7 +363,7 @@ export default function TournamentCategoriesPage(
                       }
                       className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
                     >
-                      Finalize category
+                      カテゴリを確定
                     </button>
                   </div>
 
@@ -374,14 +373,14 @@ export default function TournamentCategoriesPage(
                       onClick={() => runHealth(c.id)}
                       className="underline text-gray-400"
                     >
-                      Health check
+                      整合性チェック
                     </button>
                     <button
                       type="button"
                       onClick={() => runChampion(c.id)}
                       className="underline text-gray-400"
                     >
-                      Show champion
+                      優勝者を表示
                     </button>
                   </div>
 
@@ -395,8 +394,8 @@ export default function TournamentCategoriesPage(
                         }
                       >
                         {health.healthy
-                          ? "Integrity: OK"
-                          : "Integrity issues detected"}
+                          ? "整合性: 問題ありません"
+                          : "整合性: 問題が検出されました"}
                       </span>
                       {!health.healthy && health.issues.length > 0 && (
                         <ul className="mt-1 list-disc list-inside text-gray-300">
@@ -410,7 +409,7 @@ export default function TournamentCategoriesPage(
 
                   {champion && (
                     <div className="text-xs mt-1 text-blue-300">
-                      Champion userId: {champion}
+                      優勝者ユーザーID: {champion}
                     </div>
                   )}
                 </div>

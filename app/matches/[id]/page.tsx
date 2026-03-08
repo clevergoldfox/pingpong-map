@@ -77,7 +77,7 @@ export default function MatchPage(
 
   const submit = async()=>{
     if (!userId) {
-      setError("Please enter your user ID")
+      setError("あなたのユーザーIDを入力してください")
       return
     }
 
@@ -90,7 +90,7 @@ export default function MatchPage(
       .filter((g) => !Number.isNaN(g.p1) && !Number.isNaN(g.p2))
 
     if (scores.length === 0) {
-      setError("Please enter at least one valid game score")
+      setError("少なくとも1ゲーム分の有効なスコアを入力してください")
       return
     }
 
@@ -114,13 +114,13 @@ export default function MatchPage(
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data?.error ?? "Failed to submit result")
+        throw new Error(data?.error ?? "結果の送信に失敗しました")
       }
 
-      setMessage("Result submitted")
+      setMessage("結果を送信しました")
       await loadMatch()
     } catch (e: any) {
-      setError(e.message ?? "Failed to submit result")
+      setError(e.message ?? "結果の送信に失敗しました")
     } finally {
       setSubmitting(false)
     }
@@ -129,30 +129,30 @@ export default function MatchPage(
   return(
     <div className="space-y-6">
       <h1 className="text-2xl mb-2 font-bold">
-        Submit Match Result
+        試合結果を送信
       </h1>
 
       {loading ? (
-        <div>Loading match...</div>
+        <div>試合情報を読み込み中...</div>
       ) : error ? (
         <div className="text-red-400">{error}</div>
       ) : match ? (
         <>
           <div className="space-y-1 text-sm">
             <div>
-              <span className="text-gray-400">Match ID:</span> {match.id}
+              <span className="text-gray-400">試合ID:</span> {match.id}
             </div>
             <div>
-              <span className="text-gray-400">Players:</span>{" "}
-              {match.player1Id} vs {match.player2Id ?? "BYE"}
+              <span className="text-gray-400">対戦:</span>{" "}
+              {match.player1Id} vs {match.player2Id ?? "不戦勝"}
             </div>
             <div>
-              <span className="text-gray-400">Status:</span>{" "}
+              <span className="text-gray-400">ステータス:</span>{" "}
               {match.status} ({match.resultStatus})
             </div>
             {match.winnerId && (
               <div>
-                <span className="text-gray-400">Winner:</span>{" "}
+                <span className="text-gray-400">勝者:</span>{" "}
                 {match.winnerId}
               </div>
             )}
@@ -161,25 +161,25 @@ export default function MatchPage(
           <div className="border border-gray-800 rounded p-4 space-y-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm">
-                Your User ID (must be one of the players)
+                あなたのユーザーID（対戦プレイヤーのいずれか）
               </label>
               <input
                 className="border border-gray-700 bg-black px-3 py-2 rounded text-sm"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter your user ID"
+                placeholder="ユーザーIDを入力してください"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg font-semibold">Game scores</h2>
+                <h2 className="text-lg font-semibold">各ゲームのスコア</h2>
                 <button
                   type="button"
                   onClick={addGame}
                   className="text-sm border border-gray-700 px-3 py-1 rounded hover:bg-gray-900"
                 >
-                  Add game
+                  ゲームを追加
                 </button>
               </div>
 
@@ -190,7 +190,7 @@ export default function MatchPage(
                     className="flex items-center gap-2 text-sm"
                   >
                     <span className="w-10 text-gray-400">
-                      Game {idx + 1}
+                      第{idx + 1}ゲーム
                     </span>
                     <input
                       type="number"
@@ -199,7 +199,7 @@ export default function MatchPage(
                       onChange={(e) =>
                         updateGame(idx, "p1", e.target.value)
                       }
-                      placeholder="P1"
+                      placeholder="P1得点"
                     />
                     <span className="text-gray-400">:</span>
                     <input
@@ -209,7 +209,7 @@ export default function MatchPage(
                       onChange={(e) =>
                         updateGame(idx, "p2", e.target.value)
                       }
-                      placeholder="P2"
+                      placeholder="P2得点"
                     />
                     {games.length > 1 && (
                       <button
@@ -217,7 +217,7 @@ export default function MatchPage(
                         onClick={() => removeGame(idx)}
                         className="text-xs text-red-400 hover:underline"
                       >
-                        Remove
+                        削除
                       </button>
                     )}
                   </div>
@@ -231,7 +231,7 @@ export default function MatchPage(
               disabled={submitting}
               className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
             >
-              {submitting ? "Submitting..." : "Submit Result"}
+              {submitting ? "送信中..." : "結果を送信"}
             </button>
 
             {message && (
@@ -243,10 +243,10 @@ export default function MatchPage(
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold mb-2">Submissions</h2>
+            <h2 className="text-lg font-semibold mb-2">提出履歴</h2>
             {submissions.length === 0 ? (
               <div className="text-sm text-gray-400">
-                No submissions yet.
+                まだ提出はありません。
               </div>
             ) : (
               <ul className="text-sm space-y-1">

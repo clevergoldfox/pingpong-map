@@ -72,28 +72,28 @@ export default function AdminPage(){
   return(
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">
-        Admin Panel
+        管理画面
       </h1>
 
       <section className="border border-gray-800 rounded p-4 space-y-3">
-        <h2 className="text-xl font-semibold">Season control</h2>
+        <h2 className="text-xl font-semibold">シーズン管理</h2>
         <div className="text-sm text-gray-400">
-          Active season:{" "}
-          {activeSeason ? activeSeason : "No active season"}
+          現在のシーズン:{" "}
+          {activeSeason ? activeSeason : "なし"}
         </div>
 
         <div className="grid gap-3 md:grid-cols-3 text-sm mt-2">
           <div className="flex flex-col gap-1">
-            <label>Season name (optional)</label>
+            <label>シーズン名（任意）</label>
             <input
               className="border border-gray-700 bg-black px-3 py-2 rounded"
               value={seasonName}
               onChange={(e) => setSeasonName(e.target.value)}
-              placeholder="e.g. Spring 2026"
+              placeholder="例: 2026年春シーズン"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label>Duration (days)</label>
+            <label>期間（日数）</label>
             <input
               className="border border-gray-700 bg-black px-3 py-2 rounded"
               value={durationDays}
@@ -109,7 +109,7 @@ export default function AdminPage(){
           disabled={busy}
           className="mt-3 border border-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-900 disabled:opacity-50"
         >
-          {busy ? "Starting..." : "Start new season"}
+          {busy ? "作成中..." : "新しいシーズンを開始"}
         </button>
 
         {message && <div className="text-green-400 text-sm">{message}</div>}
@@ -117,25 +117,25 @@ export default function AdminPage(){
       </section>
 
       <section className="border border-gray-800 rounded p-4 space-y-3 text-sm">
-        <h2 className="text-xl font-semibold">Navigation</h2>
+        <h2 className="text-xl font-semibold">ナビゲーション</h2>
         <div className="flex flex-wrap gap-3">
           <Link
             href="/tournaments"
             className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900"
           >
-            Manage tournaments
+            大会を管理
           </Link>
           <Link
             href="/leaderboard"
             className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900"
           >
-            View leaderboard
+            ランキングを見る
           </Link>
           <Link
             href="/players"
             className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900"
           >
-            View players
+            プレイヤー一覧を見る
           </Link>
         </div>
       </section>

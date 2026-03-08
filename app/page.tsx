@@ -14,11 +14,11 @@ export default async function HomePage() {
     <div className="space-y-8">
 
       <h1 className="text-4xl font-bold">
-        🏓 Ping Pong Platform
+        🏓 卓球大会プラットフォーム
       </h1>
 
       <section>
-        <h2 className="text-xl mb-3">Top Players</h2>
+        <h2 className="text-xl mb-3">トッププレイヤー</h2>
 
         <div className="space-y-2">
           {leaderboard.users?.slice(0,5).map((u:any,i:number)=>(

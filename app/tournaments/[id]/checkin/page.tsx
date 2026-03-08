@@ -36,13 +36,13 @@ export default function CheckinPage(
       )
 
       if (!res.ok) {
-        throw new Error("Failed to load participants")
+        throw new Error("参加者の読み込みに失敗しました")
       }
 
       const data = await res.json()
       setParticipants(data)
     } catch (e: any) {
-      setError(e.message ?? "Failed to load participants")
+      setError(e.message ?? "参加者の読み込みに失敗しました")
     } finally {
       setLoading(false)
     }
@@ -71,13 +71,13 @@ export default function CheckinPage(
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data?.error ?? "Failed to check in player")
+        throw new Error(data?.error ?? "チェックインに失敗しました")
       }
 
-      setMessage("Player checked in")
+      setMessage("プレイヤーをチェックインしました")
       await loadParticipants()
     } catch (e: any) {
-      setError(e.message ?? "Failed to check in player")
+      setError(e.message ?? "チェックインに失敗しました")
     } finally {
       setWorkingId(null)
     }
@@ -87,11 +87,11 @@ export default function CheckinPage(
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl mb-2 font-semibold">
-          Player Check-in
+          プレイヤーチェックイン
         </h1>
         <p className="text-sm text-gray-400">
-          Only players with join status &quot;PAID&quot; can be checked in.
-          Not checked-in players will be forfeited when the tournament starts.
+          参加ステータスが「PAID」のプレイヤーのみチェックインできます。
+          チェックインしていないプレイヤーは大会開始時に棄権扱いになります。
         </p>
       </div>
 
@@ -105,16 +105,16 @@ export default function CheckinPage(
 
           {participants.length === 0 ? (
             <div className="text-sm text-gray-400">
-              No participants yet. Register players first.
+              まだ参加者がいません。先に参加者登録を行ってください。
             </div>
           ) : (
             <table className="w-full border border-gray-700 text-sm">
               <thead>
                 <tr className="bg-gray-900">
-                  <th className="px-3 py-2 text-left">Player</th>
-                  <th className="px-3 py-2 text-left">Join Status</th>
-                  <th className="px-3 py-2 text-left">Checked-in</th>
-                  <th className="px-3 py-2 text-left">Actions</th>
+                  <th className="px-3 py-2 text-left">プレイヤー</th>
+                  <th className="px-3 py-2 text-left">参加ステータス</th>
+                  <th className="px-3 py-2 text-left">チェックイン</th>
+                  <th className="px-3 py-2 text-left">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,7 +132,7 @@ export default function CheckinPage(
                       </td>
                       <td className="px-3 py-2">{p.joinStatus}</td>
                       <td className="px-3 py-2">
-                        {p.checkedIn ? "Yes" : "No"}
+                        {p.checkedIn ? "済" : "未"}
                       </td>
                       <td className="px-3 py-2">
                         <button
@@ -142,10 +142,10 @@ export default function CheckinPage(
                           onClick={() => checkin(p.userId)}
                         >
                           {p.checkedIn
-                            ? "Already checked-in"
+                            ? "チェックイン済み"
                             : workingId === p.userId
-                            ? "Checking in..."
-                            : "Check-in"}
+                            ? "処理中..."
+                            : "チェックイン"}
                         </button>
                       </td>
                     </tr>

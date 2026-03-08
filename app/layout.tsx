@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ping Pong Tournament Platform",
-  description: "Competitive tournament and ranking system",
+  title: "卓球大会プラットフォーム",
+  description: "競技用の大会運営・ランキングシステム",
 };
 
 export default function RootLayout({
@@ -24,26 +24,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
       >
         {/* Navigation Bar */}
         <nav className="border-b border-gray-700 px-6 py-4 flex gap-6 items-center">
           <Link href="/" className="font-bold text-lg">
-            🏓 PingPong
+            🏓 卓球大会
           </Link>
 
           <Link href="/tournaments" className="hover:text-blue-400">
-            Tournaments
+            大会一覧
           </Link>
 
           <Link href="/leaderboard" className="hover:text-blue-400">
-            Leaderboard
+            ランキング
           </Link>
 
           <Link href="/players" className="hover:text-blue-400">
-            Players
+            プレイヤー一覧
           </Link>
         </nav>
 

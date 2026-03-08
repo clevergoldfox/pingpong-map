@@ -46,12 +46,12 @@ export function TournamentStatusControls({
       const data = await res.json().catch(() => ({}))
 
       if (!res.ok) {
-        throw new Error(data?.error ?? "Failed to update status")
+        throw new Error(data?.error ?? "ステータスの更新に失敗しました")
       }
 
-      setMessage("Status updated")
+      setMessage("ステータスを更新しました")
     } catch (e: any) {
-      setError(e.message ?? "Failed to update status")
+      setError(e.message ?? "ステータスの更新に失敗しました")
     } finally {
       setSaving(false)
     }
@@ -77,7 +77,7 @@ export function TournamentStatusControls({
           disabled={saving}
           className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Update status"}
+          {saving ? "保存中..." : "ステータスを更新"}
         </button>
       </div>
       {message && <div className="text-green-400 text-xs">{message}</div>}

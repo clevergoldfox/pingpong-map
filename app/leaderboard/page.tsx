@@ -12,22 +12,22 @@ export default async function LeaderboardPage() {
     const data = await getLeaderboard()
 
     if (!data.users) {
-        return <div>No active season</div>
+        return <div>アクティブなシーズンがありません</div>
     }
 
     return (
         <div className="p-8">
             <h1 className="text-3xl font-bold mb-6">
-                {data.season} Leaderboard
+                {data.season} シーズンランキング
             </h1>
 
             <table className="w-full border-collapse">
                 <thead>
                     <tr className="border-b">
-                        <th className="text-left py-2">Rank</th>
-                        <th className="text-left py-2">Player</th>
-                        <th className="text-left py-2">Rating</th>
-                        <th className="text-left py-2">Tier</th>
+                        <th className="text-left py-2">順位</th>
+                        <th className="text-left py-2">プレイヤー</th>
+                        <th className="text-left py-2">レーティング</th>
+                        <th className="text-left py-2">ティア</th>
                     </tr>
                 </thead>
                 <tbody>

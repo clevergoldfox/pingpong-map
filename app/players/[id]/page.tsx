@@ -24,23 +24,23 @@ export default async function PlayerPage(
   const player = await getPlayer(id)
   const history = await getHistory(id)
 
-  if (!player) return <div>Player not found</div>
+  if (!player) return <div>プレイヤーが見つかりません</div>
 
   return (
     <div className="p-8">
       <h1 className="text-3xl font-bold mb-4">{player.name}</h1>
 
       <div className="space-y-2">
-        <div>Lifetime Rating: {player.rating}</div>
-        <div>Season Rating: {player.seasonRating}</div>
-        <div>Tier: {player.tier}</div>
-        <div>Matches Played: {player.matchCount}</div>
-        <div>Wins: {player.wins}</div>
-        <div>Losses: {player.losses}</div>
+        <div>生涯レーティング: {player.rating}</div>
+        <div>シーズンレーティング: {player.seasonRating}</div>
+        <div>ティア: {player.tier}</div>
+        <div>試合数: {player.matchCount}</div>
+        <div>勝ち: {player.wins}</div>
+        <div>負け: {player.losses}</div>
       </div>
 
       <h2 className="text-xl font-semibold mt-8 mb-4">
-        Rating Progress
+        レーティング推移
       </h2>
 
       <RatingGraph data={history} />

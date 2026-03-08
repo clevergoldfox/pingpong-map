@@ -78,7 +78,7 @@ export default function RegisterPlayerPage(
 
   const handleRegister = async () => {
     if (!selectedUserId) {
-      setError("Please select a player to register")
+      setError("登録するプレイヤーを選択してください")
       return
     }
 
@@ -99,10 +99,10 @@ export default function RegisterPlayerPage(
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data?.error ?? "Failed to register player")
+        throw new Error(data?.error ?? "プレイヤーの登録に失敗しました")
       }
 
-      setMessage("Player registered successfully")
+      setMessage("プレイヤーを登録しました")
 
       // refresh participants list
       const participantsRes = await fetch(
@@ -114,7 +114,7 @@ export default function RegisterPlayerPage(
         setParticipants(participantsData)
       }
     } catch (e: any) {
-      setError(e.message ?? "Failed to register player")
+      setError(e.message ?? "プレイヤーの登録に失敗しました")
     } finally {
       setSubmitting(false)
     }
@@ -124,11 +124,10 @@ export default function RegisterPlayerPage(
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl mb-2 font-semibold">
-          Register Players for Tournament
+          大会参加者を登録
         </h1>
         <p className="text-sm text-gray-400">
-          Choose an existing player and add them as a participant in this
-          tournament.
+          既存のプレイヤーを選択して、この大会の参加者として追加します。
         </p>
       </div>
 
@@ -140,17 +139,17 @@ export default function RegisterPlayerPage(
         <>
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col">
-              <label className="text-sm mb-1">Select player</label>
+              <label className="text-sm mb-1">プレイヤーを選択</label>
               <select
                 value={selectedUserId}
                 onChange={(e) => setSelectedUserId(e.target.value)}
                 className="border border-gray-700 bg-black px-3 py-2 rounded min-w-[260px]"
               >
-                <option value="">-- Choose a player --</option>
+                <option value="">-- プレイヤーを選択してください --</option>
                 {players.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} (Season {p.seasonRating}, {p.tier}
-                    {alreadyRegisteredIds.has(p.id) ? ", already joined" : ""})
+                    {p.name} (シーズン {p.seasonRating}, {p.tier}
+                    {alreadyRegisteredIds.has(p.id) ? "、参加済み" : ""})
                   </option>
                 ))}
               </select>
@@ -162,7 +161,7 @@ export default function RegisterPlayerPage(
               disabled={submitting}
               className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
             >
-              {submitting ? "Registering..." : "Register Player"}
+              {submitting ? "登録中..." : "プレイヤーを登録"}
             </button>
           </div>
 
@@ -171,19 +170,19 @@ export default function RegisterPlayerPage(
 
           <div>
             <h2 className="text-xl mt-6 mb-3 font-semibold">
-              Current Participants
+              現在の参加者
             </h2>
             {participants.length === 0 ? (
               <div className="text-sm text-gray-400">
-                No participants registered yet.
+                まだ参加者が登録されていません。
               </div>
             ) : (
               <table className="w-full border border-gray-700 text-sm">
                 <thead>
                   <tr className="bg-gray-900">
-                    <th className="px-3 py-2 text-left">Player</th>
-                    <th className="px-3 py-2 text-left">Join Status</th>
-                    <th className="px-3 py-2 text-left">Checked-in</th>
+                    <th className="px-3 py-2 text-left">プレイヤー</th>
+                    <th className="px-3 py-2 text-left">参加ステータス</th>
+                    <th className="px-3 py-2 text-left">チェックイン</th>
                   </tr>
                 </thead>
                 <tbody>

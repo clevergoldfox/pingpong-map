@@ -22,16 +22,16 @@ export default async function StandingsPage(
     <div>
 
       <h1 className="text-2xl mb-6">
-        Standings
+        順位表
       </h1>
 
       <table className="border">
 
         <thead>
           <tr>
-            <th>Rank</th>
-            <th>Player</th>
-            <th>Points</th>
+            <th>順位</th>
+            <th>プレイヤー</th>
+            <th>ポイント</th>
           </tr>
         </thead>
 
