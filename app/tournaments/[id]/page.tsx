@@ -1,17 +1,19 @@
 import Link from "next/link"
+import { getBaseUrl } from "@/lib/base-url"
+import { TournamentStatusControls } from "@/components/TournamentStatusControls"
 
 async function getTournament(id: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/tournaments/${id}`, { cache: "no-store" })
+    const res = await fetch(`${getBaseUrl()}/api/tournaments/${id}`, { cache: "no-store" })
     return res.json()
 }
 
 async function getMatches(id: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/tournaments/${id}/matches`, { cache: "no-store" })
+    const res = await fetch(`${getBaseUrl()}/api/tournaments/${id}/matches`, { cache: "no-store" })
     return res.json()
 }
 
 async function getStandings(id: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/tournaments/${id}/standings`, { cache: "no-store" })
+    const res = await fetch(`${getBaseUrl()}/api/tournaments/${id}/standings`, { cache: "no-store" })
     return res.json()
 }
 
@@ -28,7 +30,28 @@ export default async function TournamentPage(
     return (
         <div className="space-y-8">
 
-            <h1 className="text-3xl font-bold">{tournament.name}</h1>
+            <div className="flex items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold">{tournament.name}</h1>
+                    <p className="text-sm text-gray-400">
+                        Status: {tournament.status}
+                    </p>
+                </div>
+                <div className="flex gap-3 items-center">
+                    <form action={`${getBaseUrl()}/api/tournaments/${id}/start`} method="post">
+                        <button
+                            type="submit"
+                            className="border border-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-900"
+                        >
+                            Start tournament
+                        </button>
+                    </form>
+                    <TournamentStatusControls
+                        tournamentId={id}
+                        initialStatus={tournament.status}
+                    />
+                </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
 
@@ -46,6 +69,10 @@ export default async function TournamentPage(
 
                 <Link href={`/tournaments/${id}/standings`} className="border p-4">
                     Standings
+                </Link>
+
+                <Link href={`/tournaments/${id}/categories`} className="border p-4">
+                    Categories &amp; Rounds
                 </Link>
 
             </div>
