@@ -2,17 +2,34 @@ import Link from "next/link"
 import { TierBadge } from "@/components/TierBadge"
 
 async function getLeaderboard() {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/leaderboard/season`, {
-        cache: "no-store",
-    })
-    return res.json()
+    try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+        
+        const res = await fetch(`${baseUrl}/api/leaderboard/season`, {
+            cache: "no-store",
+        })
+        
+        if (!res.ok) {
+            return { users: null, error: "Failed to load leaderboard" }
+        }
+        
+        return await res.json()
+    } catch (error) {
+        console.error("Error loading leaderboard:", error)
+        return { users: null, error: "Failed to load leaderboard" }
+    }
 }
 
 export default async function LeaderboardPage() {
     const data = await getLeaderboard()
 
+    if (data.error) {
+        return <div className="p-8 text-red-400">{data.error}</div>
+    }
+
     if (!data.users) {
-        return <div>アクティブなシーズンがありません</div>
+        return <div className="p-8">アクティブなシーズンがありません</div>
     }
 
     return (
