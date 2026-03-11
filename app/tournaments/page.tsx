@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { CreateTournamentButton } from "@/components/CreateTournamentButton"
 
 async function getTournaments() {
   try {
@@ -27,6 +28,8 @@ export default async function TournamentsPage() {
   return (
     <div>
       <h1 className="text-3xl mb-6">大会一覧</h1>
+
+      <CreateTournamentButton />
 
       {tournaments.length === 0 ? (
         <div className="text-gray-400">大会がありません</div>

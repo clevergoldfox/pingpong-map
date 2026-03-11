@@ -45,6 +45,15 @@ model Tournament {
   startDate DateTime
   createdAt DateTime         @default(now())
 
+  // 大会要項（② step）
+  mapUrl           String?
+  openAt           DateTime?
+  entryDeadlineAt  DateTime?
+  cancelPolicy     String?
+  organizer        String?
+  sponsor          String?
+  description      String?
+
   categories   Category[]
   participants TournamentParticipant[]
   matches      Match[]
@@ -71,8 +80,30 @@ model Category {
 
   isLocked Boolean @default(false)
 
+  // 種目詳細（③ step）
+  gender                 CategoryGender?
+  teamMatchStructure     Json?   // 団体時の試合構成 [{order, type: "SINGLES"|"DOUBLES"}]
+  leagueMode             LeagueMode?
+  fullLeaguePlayerCount  Int?    // 3〜7（フル時）
+  selectLeagueMatchCount Int?    // 3〜10（セレクト時）
+  capacity               Int?
+  minEntries             Int?
+  courtRange             String?
+  ageRestriction         Json?
+  ratingRestriction      Json?
+  refereeRequired        Boolean @default(false)
+  entryFeeCard           Int?
+  entryFeeCash           Int?
+
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   matches    Match[]    @relation("CategoryMatches")
+}
+
+enum CategoryGender {
+  MALE    // 男子
+  FEMALE  // 女子
+  MIXED   // 混成
+  MIX     // ミックス
 }
 
 enum CategoryType {
@@ -81,12 +112,18 @@ enum CategoryType {
   TEAM
 }
 
-enum CompetitionFormat {
-  ROUND_ROBIN
-  SELECT_ROUND
-  TOURNAMENT
-  GROUP_TO_TOURNAMENT
+enum LeagueMode {
+  FULL    // フルリーグ（3〜7人・全対戦）
+  SELECT  // セレクトリーグ（3〜10試合）
 }
+
+enum CompetitionFormat {
+  ROUND_ROBIN   // リーグ戦
+  SELECT_ROUND  // リーグ戦（セレクト）
+  TOURNAMENT    // トーナメント戦
+  GROUP_TO_TOURNAMENT  // 予選リーグ→決勝トーナメント
+}
+
 
 enum ResultStatus {
   NONE // no submissions
