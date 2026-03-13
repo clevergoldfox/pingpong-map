@@ -40,7 +40,7 @@ export default async function StandingsPage(
         {standings.map((s:any,i:number)=>(
           <tr key={s.userId}>
             <td>{i+1}</td>
-            <td>{s.userId}</td>
+            <td>{s.user?.name ?? s.userId}</td>
             <td>{s.points}</td>
           </tr>
         ))}

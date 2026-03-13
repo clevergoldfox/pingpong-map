@@ -11,6 +11,8 @@ type MatchInfo = {
   scoreJson: any
   player1Id: string
   player2Id: string | null
+  player1?: { id: string; name: string }
+  player2?: { id: string; name: string } | null
 }
 
 type SubmissionInfo = {
@@ -25,7 +27,7 @@ export default function MatchPage(
 ){
   const { id: matchId } = use(params)
 
-  const [userId, setUserId] = useState("")
+  const [userId, setUserId] = useState<string>("")
   const [games, setGames] = useState<GameRow[]>([{ p1: "", p2: "" }])
   const [match, setMatch] = useState<MatchInfo | null>(null)
   const [submissions, setSubmissions] = useState<SubmissionInfo[]>([])
@@ -41,12 +43,20 @@ export default function MatchPage(
       const res = await fetch(`${getBaseUrl()}/api/matches/${matchId}/result`, {
         cache: "no-store",
       })
-      const data = await res.json()
+      let data: { match?: unknown; submissions?: unknown[]; error?: string }
+      try {
+        data = await res.json()
+      } catch {
+        throw new Error(res.ok ? "データの取得に失敗しました" : "サーバーエラーです。しばらく待って再読み込みしてください。")
+      }
       if (!res.ok) {
         throw new Error(data?.error ?? "Failed to load match")
       }
       setMatch(data.match)
       setSubmissions(data.submissions ?? [])
+      const m = data.match
+      if (m?.player2Id == null && m?.player1Id) setUserId(m.player1Id)
+      else setUserId("")
     } catch (e: any) {
       setError(e.message ?? "Failed to load match")
     } finally {
@@ -77,7 +87,7 @@ export default function MatchPage(
 
   const submit = async()=>{
     if (!userId) {
-      setError("あなたのユーザーIDを入力してください")
+      setError("あなたを選択してください")
       return
     }
 
@@ -126,6 +136,13 @@ export default function MatchPage(
     }
   }
 
+  const submittedByLabel = (id: string) => {
+    if (!match) return id
+    if (id === match.player1Id) return match.player1?.name ?? id
+    if (id === match.player2Id) return match.player2?.name ?? id
+    return id
+  }
+
   return(
     <div className="space-y-6">
       <h1 className="text-2xl mb-2 font-bold">
@@ -144,7 +161,8 @@ export default function MatchPage(
             </div>
             <div>
               <span className="text-gray-400">対戦:</span>{" "}
-              {match.player1Id} vs {match.player2Id ?? "不戦勝"}
+              {match.player1?.name ?? match.player1Id} vs{" "}
+              {match.player2 ? match.player2.name : match.player2Id ?? "不戦勝"}
             </div>
             <div>
               <span className="text-gray-400">ステータス:</span>{" "}
@@ -153,7 +171,9 @@ export default function MatchPage(
             {match.winnerId && (
               <div>
                 <span className="text-gray-400">勝者:</span>{" "}
-                {match.winnerId}
+                {match.winnerId === match.player1Id
+                  ? (match.player1?.name ?? match.winnerId)
+                  : (match.player2?.name ?? match.winnerId)}
               </div>
             )}
           </div>
@@ -161,14 +181,23 @@ export default function MatchPage(
           <div className="border border-gray-800 rounded p-4 space-y-4">
             <div className="flex flex-col gap-2">
               <label className="text-sm">
-                あなたのユーザーID（対戦プレイヤーのいずれか）
+                あなた（対戦プレイヤーのいずれかを選択）
               </label>
-              <input
+              <select
                 className="border border-gray-700 bg-black px-3 py-2 rounded text-sm"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                placeholder="ユーザーIDを入力してください"
-              />
+              >
+                <option value="">-- 選択してください --</option>
+                <option value={match.player1Id}>
+                  {match.player1?.name || match.player1Id}
+                </option>
+                {match.player2Id && (
+                  <option value={match.player2Id}>
+                    {match.player2?.name || match.player2Id}
+                  </option>
+                )}
+              </select>
             </div>
 
             <div>
@@ -252,7 +281,7 @@ export default function MatchPage(
               <ul className="text-sm space-y-1">
                 {submissions.map((s, i) => (
                   <li key={i}>
-                    {s.submittedById} at{" "}
+                    {submittedByLabel(s.submittedById)} at{" "}
                     {new Date(s.createdAt).toLocaleString()}
                   </li>
                 ))}

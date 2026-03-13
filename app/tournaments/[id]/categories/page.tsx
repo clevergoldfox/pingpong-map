@@ -37,6 +37,7 @@ export default function TournamentCategoriesPage(
   const [actionMessage, setActionMessage] = useState<string | null>(null)
   const [workingCategory, setWorkingCategory] = useState<string | null>(null)
 
+  const [newGender, setNewGender] = useState("MIXED")
   const [newType, setNewType] = useState("SINGLES")
   const [newFormat, setNewFormat] = useState("SELECT_ROUND")
   const [newRoundCount, setNewRoundCount] = useState("3")
@@ -45,7 +46,7 @@ export default function TournamentCategoriesPage(
     Record<string, HealthSummary | undefined>
   >({})
   const [championByCategory, setChampionByCategory] = useState<
-    Record<string, string | undefined>
+    Record<string, { id: string; name: string | null } | null | undefined>
   >({})
 
   const loadTournament = async () => {
@@ -139,7 +140,7 @@ export default function TournamentCategoriesPage(
       }
       setChampionByCategory((prev) => ({
         ...prev,
-        [categoryId]: data.championId,
+        [categoryId]: data.champion ?? { id: data.championId, name: null },
       }))
     } catch (e) {
       // ignore in UI
@@ -163,6 +164,7 @@ export default function TournamentCategoriesPage(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tournamentId,
+          gender: newGender,
           type: newType,
           format: newFormat,
           roundCount,
@@ -207,6 +209,19 @@ export default function TournamentCategoriesPage(
       <section className="border border-gray-800 rounded p-4 space-y-3">
         <h2 className="text-lg font-semibold">カテゴリを作成</h2>
         <div className="grid gap-3 md:grid-cols-3 text-sm">
+          <div className="flex flex-col gap-1">
+            <label>性別</label>
+            <select
+              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              value={newGender}
+              onChange={(e) => setNewGender(e.target.value)}
+            >
+              <option value="MALE">男子</option>
+              <option value="FEMALE">女子</option>
+              <option value="MIXED">混成</option>
+              <option value="MIX">ミックス</option>
+            </select>
+          </div>
           <div className="flex flex-col gap-1">
             <label>種別</label>
             <select
@@ -409,7 +424,7 @@ export default function TournamentCategoriesPage(
 
                   {champion && (
                     <div className="text-xs mt-1 text-blue-300">
-                      優勝者ユーザーID: {champion}
+                      優勝者: {champion.name ?? champion.id}
                     </div>
                   )}
                 </div>

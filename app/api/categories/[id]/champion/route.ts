@@ -38,10 +38,16 @@ export async function GET(
     )
   }
 
+  const champion = await prisma.user.findUnique({
+    where: { id: finalMatch.winnerId },
+    select: { id: true, name: true },
+  })
+
   // 3️⃣ Return champion
   return NextResponse.json({
     categoryId,
     finalRound,
     championId: finalMatch.winnerId,
+    champion: champion ?? null,
   })
 }

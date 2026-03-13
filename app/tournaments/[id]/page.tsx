@@ -120,7 +120,7 @@ export default async function TournamentPage(
                             href={`/matches/${m.id}`}
                             className="block border p-3 border-gray-700 rounded"
                         >
-                            {m.player1Id} vs {m.player2Id}
+                            {m.player1?.name ?? m.player1Id} vs {m.player2 ? (m.player2.name ?? m.player2Id) : (m.player2Id ?? "不戦勝")}
                             <span className="ml-4 text-gray-400">
                                 第{m.roundNumber}ラウンド
                             </span>

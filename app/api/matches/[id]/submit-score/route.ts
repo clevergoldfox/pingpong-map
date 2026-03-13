@@ -31,7 +31,8 @@ export async function POST(
     const scoreKey = stableStringify(scores)
 
     try {
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(
+            async (tx) => {
             const match = await tx.match.findUnique({
                 where: { id: matchId },
                 select: {
@@ -168,9 +169,8 @@ export async function POST(
                         })
 
                         if (!activeSeason) {
-                            throw new Error("No active season found.")
-                        }
-
+                            // シーズンが無くても試合結果は確定する。レーティング更新のみスキップ
+                        } else {
                         const user1 = await tx.user.findUnique({
                             where: { id: freshMatch.player1Id },
                             select: { id: true, rating: true, seasonRating: true },
@@ -242,6 +242,7 @@ export async function POST(
                                 where: { id: matchId },
                                 data: { ratingApplied: true },
                             })
+                        }
                         }
                     }
 
@@ -324,10 +325,21 @@ export async function POST(
                     message: "Waiting for opponent confirmation / match agreement.",
                 },
             }
-        })
+        },
+            {
+                maxWait: 20_000,
+                timeout: 30_000,
+            }
+        )
 
         return NextResponse.json(result.payload, { status: result.status })
     } catch (e: any) {
-        return NextResponse.json({ error: e.message ?? "Server error" }, { status: 500 })
+        const msg = e?.message ?? "Server error"
+        const isTransactionTimeout =
+            /transaction|timeout|given time/i.test(msg) || e?.code === "P2028"
+        return NextResponse.json(
+            { error: isTransactionTimeout ? "データベース接続が遅いためタイムアウトしました。しばらく待って再送信してください。" : msg },
+            { status: isTransactionTimeout ? 503 : 500 }
+        )
     }
 }

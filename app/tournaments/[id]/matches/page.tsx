@@ -1,42 +1,193 @@
+"use client"
+
+import { use, useEffect, useMemo, useState } from "react"
 import { getBaseUrl } from "@/lib/base-url"
 
-async function getMatches(id:string){
-
-  const res = await fetch( `${getBaseUrl()}/api/tournaments/${id}/matches`,{
-    cache:"no-store"
-  })
-
-  return res.json()
+type MatchRow = {
+  id: string
+  roundNumber: number | null
+  player1Id: string
+  player2Id: string | null
+  player1?: { id: string; name: string }
+  player2?: { id: string; name: string }
+  category?: { refereeRequired: boolean }
+  referees?: Array<{ user: { id: string; name: string } }>
 }
 
-export default async function MatchesPage(
-  { params }:{params:Promise<{id:string}>}
-){
+type ParticipantRow = {
+  userId: string
+  checkedIn: boolean
+  joinStatus: string
+  user: { id: string; name: string }
+}
 
-  const {id} = await params
+export default function MatchesPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const [tournamentId, setTournamentId] = useState<string>("")
+  const [matches, setMatches] = useState<MatchRow[]>([])
+  const [participants, setParticipants] = useState<ParticipantRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [participantsWarning, setParticipantsWarning] = useState<string | null>(
+    null
+  )
+  const [savingMatchId, setSavingMatchId] = useState<string | null>(null)
 
-  const matches = await getMatches(id)
+  useEffect(() => {
+    params.then((p) => setTournamentId(p.id))
+  }, [params])
 
-  return(
+  const load = async (id: string) => {
+    try {
+      setLoading(true)
+      setError(null)
+      setParticipantsWarning(null)
+      const base = getBaseUrl()
+      const [mRes, pRes] = await Promise.all([
+        fetch(`${base}/api/tournaments/${id}/matches`, { cache: "no-store" }),
+        fetch(`${base}/api/tournaments/${id}/participants`, {
+          cache: "no-store",
+        }),
+      ])
+      const mData = await mRes.json()
+      if (!mRes.ok) throw new Error(mData?.error ?? "Failed to load matches")
+      setMatches(mData)
 
-    <div>
+      if (pRes.ok) {
+        const pData = await pRes.json()
+        setParticipants(pData)
+      } else {
+        const pData = await pRes.json().catch(() => ({}))
+        setParticipants([])
+        setParticipantsWarning(
+          pData?.error ??
+            "参加者一覧の取得に失敗しました（審判候補が表示されません）"
+        )
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load")
+    } finally {
+      setLoading(false)
+    }
+  }
 
-      <h1 className="text-2xl mb-6">
-        試合一覧
-      </h1>
+  useEffect(() => {
+    if (!tournamentId) return
+    load(tournamentId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tournamentId])
 
-      {matches.map((m:any)=>(
-        <div key={m.id} className="border p-3 mb-2">
+  const refereeCandidates = useMemo(() => {
+    // MVP: checked-in participants only
+    return participants
+      .filter((p) => p.checkedIn && p.joinStatus === "PAID")
+      .map((p) => p.user)
+  }, [participants])
 
-          {m.player1Id} vs {m.player2Id}
+  const setReferee = async (matchId: string, userId: string | null) => {
+    try {
+      setSavingMatchId(matchId)
+      setError(null)
+      const res = await fetch(`${getBaseUrl()}/api/matches/${matchId}/referee`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error ?? "Failed to set referee")
 
-          <div>
-            第{m.roundNumber}ラウンド
-          </div>
+      // Update local state optimistically
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === matchId
+            ? {
+                ...m,
+                referees: userId
+                  ? [{ user: { id: userId, name: data.referee?.name ?? "" } }]
+                  : [],
+              }
+            : m
+        )
+      )
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to set referee")
+    } finally {
+      setSavingMatchId(null)
+    }
+  }
 
+  if (loading) return <div className="text-gray-400">読み込み中...</div>
+  if (error) return <div className="text-red-400">{error}</div>
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl mb-2">試合一覧</h1>
+      <p className="text-sm text-gray-400">
+        審判ありの種目では、各試合に審判を割り当てられます（チェックイン済み参加者から選択）。
+      </p>
+      {participantsWarning && (
+        <div className="text-amber-300 text-sm">
+          {participantsWarning}
         </div>
-      ))}
+      )}
 
+      <div className="space-y-2">
+        {matches.map((m) => {
+          const refereeRequired = m.category?.refereeRequired === true
+          const currentRef = m.referees?.[0]?.user ?? null
+          const exclude = new Set([m.player1Id, m.player2Id].filter(Boolean))
+          const options = refereeCandidates.filter((u) => !exclude.has(u.id))
+          const disabled = savingMatchId === m.id
+
+          return (
+            <div key={m.id} className="border border-gray-800 rounded p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="text-sm">
+                  <div className="font-medium">
+                    {m.player1?.name ?? m.player1Id} vs{" "}
+                    {m.player2 ? m.player2.name : m.player2Id ?? "不戦勝"}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    第{m.roundNumber ?? "?"}ラウンド
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm">
+                  {refereeRequired ? (
+                    <>
+                      <select
+                        value={currentRef?.id ?? ""}
+                        onChange={(e) =>
+                          setReferee(m.id, e.target.value || null)
+                        }
+                        className="border border-gray-700 bg-black px-2 py-1 rounded"
+                        disabled={disabled}
+                      >
+                        <option value="">審判なし</option>
+                        {options.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name}
+                          </option>
+                        ))}
+                      </select>
+                      {disabled && (
+                        <span className="text-xs text-gray-400">保存中...</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-gray-500 text-xs">
+                      審判なし（この種目は審判不要）
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

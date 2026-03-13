@@ -440,6 +440,9 @@ function Step3Categories({
   const [leagueMode, setLeagueMode] = useState<"FULL" | "SELECT">("FULL")
   const [fullLeaguePlayerCount, setFullLeaguePlayerCount] = useState(5)
   const [selectLeagueMatchCount, setSelectLeagueMatchCount] = useState(5)
+  const [teamSlots, setTeamSlots] = useState<Array<{ order: number; type: "SINGLES" | "DOUBLES" }>>([
+    { order: 1, type: "SINGLES" },
+  ])
   const [capacity, setCapacity] = useState("")
   const [minEntries, setMinEntries] = useState("")
   const [courtRange, setCourtRange] = useState("")
@@ -450,6 +453,28 @@ function Step3Categories({
   const [submitting, setSubmitting] = useState(false)
 
   const isLeague = format === "ROUND_ROBIN" || format === "SELECT_ROUND"
+  const isTeam = type === "TEAM"
+
+  const addTeamSlot = () => {
+    setTeamSlots((prev) => {
+      const nextOrder = prev.length + 1
+      return [...prev, { order: nextOrder, type: "SINGLES" }]
+    })
+  }
+
+  const removeTeamSlot = (order: number) => {
+    setTeamSlots((prev) => {
+      const filtered = prev.filter((s) => s.order !== order)
+      const reindexed = filtered.map((s, idx) => ({ ...s, order: idx + 1 }))
+      return reindexed.length ? reindexed : [{ order: 1, type: "SINGLES" }]
+    })
+  }
+
+  const updateTeamSlot = (order: number, slotType: "SINGLES" | "DOUBLES") => {
+    setTeamSlots((prev) =>
+      prev.map((s) => (s.order === order ? { ...s, type: slotType } : s))
+    )
+  }
 
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -463,6 +488,12 @@ function Step3Categories({
         format,
         roundCount,
         refereeRequired,
+      }
+      if (isTeam) {
+        body.teamMatchStructure = teamSlots.map((s) => ({
+          order: s.order,
+          type: s.type,
+        }))
       }
       if (isLeague) {
         body.leagueMode = leagueMode
@@ -540,6 +571,54 @@ function Step3Categories({
               <option value="TEAM">団体</option>
             </select>
           </div>
+          {isTeam && (
+            <div className="border border-gray-700 rounded p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="font-medium">団体戦の試合構成</div>
+                <button
+                  type="button"
+                  onClick={addTeamSlot}
+                  className="text-xs border border-gray-700 px-2 py-1 rounded hover:bg-gray-900"
+                >
+                  + 枠を追加
+                </button>
+              </div>
+              <div className="space-y-2">
+                {teamSlots.map((s) => (
+                  <div key={s.order} className="flex items-center gap-2">
+                    <div className="w-16 text-gray-400 text-xs">
+                      {s.order}枠目
+                    </div>
+                    <select
+                      value={s.type}
+                      onChange={(e) =>
+                        updateTeamSlot(
+                          s.order,
+                          e.target.value as "SINGLES" | "DOUBLES"
+                        )
+                      }
+                      className="flex-1 border border-gray-700 bg-black px-3 py-2 rounded"
+                    >
+                      <option value="SINGLES">シングルス</option>
+                      <option value="DOUBLES">ダブルス</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => removeTeamSlot(s.order)}
+                      className="text-xs text-red-400 hover:underline"
+                      disabled={teamSlots.length <= 1}
+                      aria-disabled={teamSlots.length <= 1}
+                    >
+                      削除
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-gray-400">
+                例）1枠目: シングルス、2枠目: ダブルス…のように自由に並べられます。
+              </div>
+            </div>
+          )}
           <div>
             <label className="block mb-1">形式 *</label>
             <select

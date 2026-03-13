@@ -27,6 +27,7 @@ model User {
   tournaments   TournamentParticipant[]
   matches1      Match[]                 @relation("MatchPlayer1")
   matches2      Match[]                 @relation("MatchPlayer2")
+  refereeAssignments MatchRefereeAssignment[]
   ratingHistory RatingHistory[]
   @@index([rating])
 }
@@ -160,9 +161,23 @@ model Match {
 
   player1       User            @relation("MatchPlayer1", fields: [player1Id], references: [id])
   player2       User?           @relation("MatchPlayer2", fields: [player2Id], references: [id])
+  referees      MatchRefereeAssignment[]
   ratingHistory RatingHistory[]
   @@index([categoryId, roundNumber])
   @@index([tournamentId])
+}
+
+model MatchRefereeAssignment {
+  id        String   @id @default(uuid())
+  matchId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([matchId]) // 1 referee per match (MVP)
+  @@index([userId])
 }
 
 enum MatchStatus {
