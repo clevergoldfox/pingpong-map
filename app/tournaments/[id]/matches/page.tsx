@@ -5,6 +5,7 @@ import { getBaseUrl } from "@/lib/base-url"
 
 type MatchRow = {
   id: string
+  categoryId: string
   roundNumber: number | null
   player1Id: string
   player2Id: string | null
@@ -81,11 +82,23 @@ export default function MatchesPage({
   }, [tournamentId])
 
   const refereeCandidates = useMemo(() => {
-    // MVP: checked-in participants only
     return participants
       .filter((p) => p.checkedIn && p.joinStatus === "PAID")
       .map((p) => p.user)
   }, [participants])
+
+  // 種目ごとに「その種目に出場している参加者」の ID 一覧（審判候補を同種目内に絞る用）
+  const categoryParticipantIdsByCategoryId = useMemo(() => {
+    const map = new Map<string, Set<string>>()
+    for (const m of matches) {
+      const catId = m.categoryId
+      if (!catId) continue
+      if (!map.has(catId)) map.set(catId, new Set())
+      if (m.player1Id) map.get(catId)!.add(m.player1Id)
+      if (m.player2Id) map.get(catId)!.add(m.player2Id)
+    }
+    return map
+  }, [matches])
 
   const setReferee = async (matchId: string, userId: string | null) => {
     try {
@@ -126,7 +139,7 @@ export default function MatchesPage({
     <div className="space-y-4">
       <h1 className="text-2xl mb-2">試合一覧</h1>
       <p className="text-sm text-gray-400">
-        審判ありの種目では、各試合に審判を割り当てられます（チェックイン済み参加者から選択）。
+        審判ありの種目では、各試合に審判を割り当てられます。候補は同種目出場者（チェックイン済み）のみです。
       </p>
       {participantsWarning && (
         <div className="text-amber-300 text-sm">
@@ -139,7 +152,14 @@ export default function MatchesPage({
           const refereeRequired = m.category?.refereeRequired === true
           const currentRef = m.referees?.[0]?.user ?? null
           const exclude = new Set([m.player1Id, m.player2Id].filter(Boolean))
-          const options = refereeCandidates.filter((u) => !exclude.has(u.id))
+          const sameCategoryIds = m.categoryId
+            ? categoryParticipantIdsByCategoryId.get(m.categoryId)
+            : undefined
+          const options = refereeCandidates.filter(
+            (u) =>
+              !exclude.has(u.id) &&
+              (sameCategoryIds ? sameCategoryIds.has(u.id) : true)
+          )
           const disabled = savingMatchId === m.id
 
           return (

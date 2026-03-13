@@ -59,6 +59,16 @@ export async function POST(req: Request) {
   if (body.selectLeagueMatchCount != null) createData.selectLeagueMatchCount = body.selectLeagueMatchCount
   if (body.capacity != null) createData.capacity = body.capacity
   if (body.minEntries != null) createData.minEntries = body.minEntries
+  if (
+    createData.capacity != null &&
+    createData.minEntries != null &&
+    createData.capacity < createData.minEntries
+  ) {
+    return NextResponse.json(
+      { error: "定員は最小催行人数以上にしてください。" },
+      { status: 400 }
+    )
+  }
   if (body.courtRange != null) createData.courtRange = body.courtRange
   if (body.ageRestriction != null) createData.ageRestriction = body.ageRestriction
   if (body.ratingRestriction != null) createData.ratingRestriction = body.ratingRestriction

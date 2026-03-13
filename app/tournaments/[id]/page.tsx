@@ -77,6 +77,28 @@ export default async function TournamentPage(
 
             </div>
 
+            {/* 種目・参加費 */}
+            {tournament.categories?.length > 0 && (
+                <section>
+                    <h2 className="text-xl mb-3">種目・参加費</h2>
+                    <ul className="space-y-2 text-sm">
+                        {tournament.categories.map((c: any) => {
+                            const card = c.entryFeeCard != null ? `カード ¥${c.entryFeeCard}` : null
+                            const cash = c.entryFeeCash != null ? `当日 ¥${c.entryFeeCash}` : null
+                            const fee = [card, cash].filter(Boolean).join(" / ") || "—"
+                            return (
+                                <li key={c.id} className="flex flex-wrap items-center gap-2 border border-gray-700 rounded px-3 py-2">
+                                    <span className="font-medium">{c.type}</span>
+                                    <span className="text-gray-400">{c.format}</span>
+                                    {c.gender && <span className="text-gray-400">({c.gender})</span>}
+                                    <span className="text-gray-300">参加費: {fee}</span>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </section>
+            )}
+
             {/* Standings */}
 
             <section>
@@ -97,7 +119,7 @@ export default async function TournamentPage(
                                 <td>{i + 1}</td>
                                 <td>
                                     <Link href={`/players/${s.userId}`}>
-                                        {s.userId}
+                                        {s.user?.name ?? s.userId}
                                     </Link>
                                 </td>
                                 <td>{s.points}</td>

@@ -21,11 +21,27 @@ type Participant = {
   }
 }
 
+type CategoryRow = {
+  id: string
+  type: string
+  format: string
+  gender?: string | null
+  entryFeeCard?: number | null
+  entryFeeCash?: number | null
+}
+
+type TournamentRow = {
+  id: string
+  name: string
+  categories?: CategoryRow[]
+}
+
 export default function RegisterPlayerPage(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: tournamentId } = use(params)
 
+  const [tournament, setTournament] = useState<TournamentRow | null>(null)
   const [players, setPlayers] = useState<Player[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
   const [selectedUserId, setSelectedUserId] = useState("")
@@ -42,13 +58,20 @@ export default function RegisterPlayerPage(
 
         const base = getBaseUrl()
 
-        const [playersRes, participantsRes] = await Promise.all([
+        const [tournamentRes, playersRes, participantsRes] = await Promise.all([
+          fetch(`${base}/api/tournaments/${tournamentId}`, { cache: "no-store" }),
           fetch(`${base}/api/players`, { cache: "no-store" }),
           fetch(`${base}/api/tournaments/${tournamentId}/participants`, {
             cache: "no-store",
           }),
         ])
 
+        if (tournamentRes.ok) {
+          const tournamentData = await tournamentRes.json()
+          setTournament(tournamentData)
+        } else {
+          setTournament(null)
+        }
         if (!playersRes.ok) {
           throw new Error("Failed to load players")
         }
@@ -130,6 +153,27 @@ export default function RegisterPlayerPage(
           既存のプレイヤーを選択して、この大会の参加者として追加します。
         </p>
       </div>
+
+      {tournament?.categories && tournament.categories.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold mb-2">種目・参加費</h2>
+          <ul className="space-y-2 text-sm border border-gray-700 rounded divide-y divide-gray-700">
+            {tournament.categories.map((c: CategoryRow) => {
+              const card = c.entryFeeCard != null ? `カード ¥${c.entryFeeCard}` : null
+              const cash = c.entryFeeCash != null ? `当日 ¥${c.entryFeeCash}` : null
+              const fee = [card, cash].filter(Boolean).join(" / ") || "—"
+              return (
+                <li key={c.id} className="px-3 py-2 flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{c.type}</span>
+                  <span className="text-gray-400">{c.format}</span>
+                  {c.gender && <span className="text-gray-400">({c.gender})</span>}
+                  <span className="text-gray-300">参加費: {fee}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {loading ? (
         <div>Loading players and participants...</div>

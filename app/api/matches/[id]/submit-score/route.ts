@@ -260,46 +260,27 @@ export async function POST(
                     })
 
                     if (category && !category.isLocked) {
-                        // Get max round in this category
-                        const maxRoundMatch = await tx.match.findFirst({
+                        // Lock category only after ALL matches (all rounds, including finals) are finished
+                        const allCategoryMatches = await tx.match.findMany({
                             where: { categoryId: match.categoryId },
-                            orderBy: { roundNumber: "desc" },
-                            select: { roundNumber: true },
+                            select: { id: true, resultStatus: true },
                         })
 
-                        if (maxRoundMatch) {
-                            const finalRound = maxRoundMatch.roundNumber
+                        const allLocked =
+                            allCategoryMatches.length > 0 &&
+                            allCategoryMatches.every((m) => m.resultStatus === "LOCKED")
 
-                            // Count matches in final round
-                            const finalRoundMatches = await tx.match.findMany({
-                                where: {
-                                    categoryId: match.categoryId,
-                                    roundNumber: finalRound,
-                                },
+                        if (allLocked) {
+                            // Mark all matches in category as FINISHED
+                            await tx.match.updateMany({
+                                where: { categoryId: match.categoryId },
+                                data: { status: "FINISHED" },
                             })
 
-                            const allLocked = finalRoundMatches.every(
-                                m => m.resultStatus === "LOCKED"
-                            )
-
-                            if (allLocked) {
-                                // Mark matches FINISHED
-                                await tx.match.updateMany({
-                                    where: {
-                                        categoryId: match.categoryId,
-                                        roundNumber: finalRound,
-                                    },
-                                    data: {
-                                        status: "FINISHED",
-                                    },
-                                })
-
-                                // Lock category
-                                await tx.category.update({
-                                    where: { id: match.categoryId },
-                                    data: { isLocked: true },
-                                })
-                            }
+                            await tx.category.update({
+                                where: { id: match.categoryId },
+                                data: { isLocked: true },
+                            })
                         }
                     }
 

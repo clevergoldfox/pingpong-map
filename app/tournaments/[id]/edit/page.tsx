@@ -446,6 +446,12 @@ function Step3Categories({
   const [capacity, setCapacity] = useState("")
   const [minEntries, setMinEntries] = useState("")
   const [courtRange, setCourtRange] = useState("")
+  const [ageRestrictionEnabled, setAgeRestrictionEnabled] = useState(false)
+  const [ageMin, setAgeMin] = useState("")
+  const [ageMax, setAgeMax] = useState("")
+  const [ratingRestrictionEnabled, setRatingRestrictionEnabled] = useState(false)
+  const [ratingMin, setRatingMin] = useState("")
+  const [ratingMax, setRatingMax] = useState("")
   const [refereeRequired, setRefereeRequired] = useState(false)
   const [entryFeeCard, setEntryFeeCard] = useState("")
   const [entryFeeCash, setEntryFeeCash] = useState("")
@@ -506,6 +512,16 @@ function Step3Categories({
       if (capacity.trim()) body.capacity = parseInt(capacity, 10)
       if (minEntries.trim()) body.minEntries = parseInt(minEntries, 10)
       if (courtRange.trim()) body.courtRange = courtRange
+      if (ageRestrictionEnabled) {
+        const min = ageMin.trim() ? parseInt(ageMin, 10) : undefined
+        const max = ageMax.trim() ? parseInt(ageMax, 10) : undefined
+        if (min != null || max != null) body.ageRestriction = { minAge: min, maxAge: max }
+      }
+      if (ratingRestrictionEnabled) {
+        const min = ratingMin.trim() ? parseInt(ratingMin, 10) : undefined
+        const max = ratingMax.trim() ? parseInt(ratingMax, 10) : undefined
+        if (min != null || max != null) body.ratingRestriction = { minRating: min, maxRating: max }
+      }
       if (entryFeeCard.trim()) body.entryFeeCard = parseInt(entryFeeCard, 10)
       if (entryFeeCash.trim()) body.entryFeeCash = parseInt(entryFeeCash, 10)
 
@@ -724,6 +740,69 @@ function Step3Categories({
               className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
               placeholder="1〜4"
             />
+          </div>
+          <div className="border border-gray-700 rounded p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="ageRestriction"
+                checked={ageRestrictionEnabled}
+                onChange={(e) => setAgeRestrictionEnabled(e.target.checked)}
+              />
+              <label htmlFor="ageRestriction">年齢指定あり</label>
+            </div>
+            {ageRestrictionEnabled && (
+              <div className="flex items-center gap-2 text-sm">
+                <input
+                  type="number"
+                  min={0}
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(e.target.value)}
+                  className="w-20 border border-gray-700 bg-black px-2 py-1 rounded"
+                  placeholder="最小"
+                />
+                <span className="text-gray-400">〜</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(e.target.value)}
+                  className="w-20 border border-gray-700 bg-black px-2 py-1 rounded"
+                  placeholder="最大"
+                />
+                <span className="text-gray-400 text-xs">歳</span>
+              </div>
+            )}
+          </div>
+          <div className="border border-gray-700 rounded p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="ratingRestriction"
+                checked={ratingRestrictionEnabled}
+                onChange={(e) => setRatingRestrictionEnabled(e.target.checked)}
+              />
+              <label htmlFor="ratingRestriction">レーティング指定あり</label>
+            </div>
+            {ratingRestrictionEnabled && (
+              <div className="flex items-center gap-2 text-sm">
+                <input
+                  type="number"
+                  value={ratingMin}
+                  onChange={(e) => setRatingMin(e.target.value)}
+                  className="w-24 border border-gray-700 bg-black px-2 py-1 rounded"
+                  placeholder="最小"
+                />
+                <span className="text-gray-400">〜</span>
+                <input
+                  type="number"
+                  value={ratingMax}
+                  onChange={(e) => setRatingMax(e.target.value)}
+                  className="w-24 border border-gray-700 bg-black px-2 py-1 rounded"
+                  placeholder="最大"
+                />
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <input
