@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
 import { TournamentStatusControls } from "@/components/TournamentStatusControls"
+import { getCurrentUser } from "@/lib/current-user"
 
 async function getTournament(id: string) {
     const res = await fetch(`${getBaseUrl()}/api/tournaments/${id}`, { cache: "no-store" })
@@ -23,9 +24,15 @@ export default async function TournamentPage(
 
     const { id } = await params
 
-    const tournament = await getTournament(id)
-    const matches = await getMatches(id)
-    const standings = await getStandings(id)
+    const [tournament, matches, standings, user] = await Promise.all([
+        getTournament(id),
+        getMatches(id),
+        getStandings(id),
+        getCurrentUser(),
+    ])
+
+    const isOrganizerOrAdmin =
+        user?.role === "ADMIN" || user?.role === "ORGANIZER"
 
     return (
         <div className="space-y-8">
@@ -37,20 +44,22 @@ export default async function TournamentPage(
                         ステータス: {tournament.status}
                     </p>
                 </div>
-                <div className="flex gap-3 items-center">
-                    <form action={`${getBaseUrl()}/api/tournaments/${id}/start`} method="post">
-                        <button
-                            type="submit"
-                            className="border border-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-900"
-                        >
-                            大会開始
-                        </button>
-                    </form>
-                    <TournamentStatusControls
-                        tournamentId={id}
-                        initialStatus={tournament.status}
-                    />
-                </div>
+                {isOrganizerOrAdmin && (
+                    <div className="flex gap-3 items-center">
+                        <form action={`${getBaseUrl()}/api/tournaments/${id}/start`} method="post">
+                            <button
+                                type="submit"
+                                className="border border-gray-700 px-3 py-2 rounded text-sm hover:bg-gray-900"
+                            >
+                                大会開始
+                            </button>
+                        </form>
+                        <TournamentStatusControls
+                            tournamentId={id}
+                            initialStatus={tournament.status}
+                        />
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -71,9 +80,11 @@ export default async function TournamentPage(
                     順位表
                 </Link>
 
-                <Link href={`/tournaments/${id}/categories`} className="border p-4">
-                    カテゴリ・ラウンド管理
-                </Link>
+                {isOrganizerOrAdmin && (
+                    <Link href={`/tournaments/${id}/categories`} className="border p-4">
+                        カテゴリ・ラウンド管理
+                    </Link>
+                )}
 
             </div>
 

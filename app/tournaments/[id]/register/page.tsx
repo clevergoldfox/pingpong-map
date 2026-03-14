@@ -1,14 +1,8 @@
 "use client"
 
-import { use, useEffect, useMemo, useState } from "react"
+import { use, useEffect, useState } from "react"
+import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
-
-type Player = {
-  id: string
-  name: string
-  seasonRating: number
-  tier: string
-}
 
 type Participant = {
   id: string
@@ -33,124 +27,176 @@ type CategoryRow = {
 type TournamentRow = {
   id: string
   name: string
+  status?: string
   categories?: CategoryRow[]
 }
 
-export default function RegisterPlayerPage(
-  { params }: { params: Promise<{ id: string }> }
-) {
+type MeUser = {
+  id: string
+  name: string
+  role: string
+}
+
+export default function RegisterPlayerPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const { id: tournamentId } = use(params)
 
   const [tournament, setTournament] = useState<TournamentRow | null>(null)
-  const [players, setPlayers] = useState<Player[]>([])
   const [participants, setParticipants] = useState<Participant[]>([])
-  const [selectedUserId, setSelectedUserId] = useState("")
+  const [me, setMe] = useState<MeUser | null>(null)
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        const base = getBaseUrl()
-
-        const [tournamentRes, playersRes, participantsRes] = await Promise.all([
-          fetch(`${base}/api/tournaments/${tournamentId}`, { cache: "no-store" }),
-          fetch(`${base}/api/players`, { cache: "no-store" }),
-          fetch(`${base}/api/tournaments/${tournamentId}/participants`, {
-            cache: "no-store",
-          }),
-        ])
-
-        if (tournamentRes.ok) {
-          const tournamentData = await tournamentRes.json()
-          setTournament(tournamentData)
-        } else {
-          setTournament(null)
-        }
-        if (!playersRes.ok) {
-          throw new Error("Failed to load players")
-        }
-        if (!participantsRes.ok) {
-          throw new Error("Failed to load participants")
-        }
-
-        const playersData = await playersRes.json()
-        const participantsData = await participantsRes.json()
-
-        setPlayers(playersData)
-        setParticipants(participantsData)
-      } catch (e: any) {
-        setError(e.message ?? "Failed to load data")
-      } finally {
-        setLoading(false)
+  const load = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const base = getBaseUrl()
+      const [tournamentRes, participantsRes, meRes] = await Promise.all([
+        fetch(`${base}/api/tournaments/${tournamentId}`, { cache: "no-store" }),
+        fetch(`${base}/api/tournaments/${tournamentId}/participants`, {
+          cache: "no-store",
+        }),
+        fetch(`${base}/api/auth/me`, { cache: "no-store" }),
+      ])
+      if (tournamentRes.ok) {
+        const data = await tournamentRes.json()
+        setTournament(data)
+      } else {
+        setTournament(null)
       }
+      if (participantsRes.ok) {
+        const data = await participantsRes.json()
+        setParticipants(data)
+      } else {
+        setParticipants([])
+      }
+      if (meRes.ok) {
+        const data = await meRes.json()
+        setMe(data?.user ?? null)
+      } else {
+        setMe(null)
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to load data")
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     load()
   }, [tournamentId])
 
-  const alreadyRegisteredIds = useMemo(
-    () => new Set(participants.map((p) => p.userId)),
-    [participants]
-  )
+  const myParticipant = me
+    ? participants.find((p) => p.userId === me.id && p.joinStatus !== "CANCELED")
+    : null
+  const canRegister = me && !myParticipant
+  const canUnregister = myParticipant && myParticipant.joinStatus === "PAID"
+  const canCheckIn =
+    myParticipant &&
+    myParticipant.joinStatus === "PAID" &&
+    !myParticipant.checkedIn &&
+    tournament &&
+    ["CHECKIN", "REGISTRATION_CLOSED"].includes(tournament.status ?? "")
+  const canUncheckIn =
+    myParticipant && myParticipant.checkedIn && tournament && ["CHECKIN", "REGISTRATION_CLOSED"].includes(tournament.status ?? "")
 
   const handleRegister = async () => {
-    if (!selectedUserId) {
-      setError("登録するプレイヤーを選択してください")
-      return
-    }
-
+    if (!me) return
+    setWorking(true)
+    setError(null)
+    setMessage(null)
     try {
-      setSubmitting(true)
-      setError(null)
-      setMessage(null)
-
-      const res = await fetch(
-        `${getBaseUrl()}/api/tournaments/${tournamentId}/join`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: selectedUserId }),
-        }
-      )
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        throw new Error(data?.error ?? "プレイヤーの登録に失敗しました")
-      }
-
-      setMessage("プレイヤーを登録しました")
-
-      // refresh participants list
-      const participantsRes = await fetch(
-        `${getBaseUrl()}/api/tournaments/${tournamentId}/participants`,
-        { cache: "no-store" }
-      )
-      if (participantsRes.ok) {
-        const participantsData = await participantsRes.json()
-        setParticipants(participantsData)
-      }
-    } catch (e: any) {
-      setError(e.message ?? "プレイヤーの登録に失敗しました")
+      const res = await fetch(`${getBaseUrl()}/api/tournaments/${tournamentId}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: me.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? "参加登録に失敗しました")
+      setMessage("参加登録しました")
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "参加登録に失敗しました")
     } finally {
-      setSubmitting(false)
+      setWorking(false)
+    }
+  }
+
+  const handleUnregister = async () => {
+    if (!me) return
+    setWorking(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/tournaments/${tournamentId}/leave`, {
+        method: "POST",
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? "参加取消に失敗しました")
+      setMessage("参加を取消しました")
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "参加取消に失敗しました")
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  const handleCheckIn = async () => {
+    if (!me) return
+    setWorking(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/tournaments/${tournamentId}/checkin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: me.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? "チェックインに失敗しました")
+      setMessage("チェックインしました")
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "チェックインに失敗しました")
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  const handleUncheckIn = async () => {
+    if (!me) return
+    setWorking(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/tournaments/${tournamentId}/uncheckin`, {
+        method: "POST",
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? "チェックイン取消に失敗しました")
+      setMessage("チェックインを取消しました")
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "チェックイン取消に失敗しました")
+    } finally {
+      setWorking(false)
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl mb-2 font-semibold">
-          大会参加者を登録
-        </h1>
+        <h1 className="text-2xl mb-2 font-semibold">大会参加者を登録</h1>
         <p className="text-sm text-gray-400">
-          既存のプレイヤーを選択して、この大会の参加者として追加します。
+          ログイン中のあなた自身の参加登録・参加取消・チェックインを行います。
         </p>
       </div>
 
@@ -166,7 +212,9 @@ export default function RegisterPlayerPage(
                 <li key={c.id} className="px-3 py-2 flex flex-wrap items-center gap-2">
                   <span className="font-medium">{c.type}</span>
                   <span className="text-gray-400">{c.format}</span>
-                  {c.gender && <span className="text-gray-400">({c.gender})</span>}
+                  {c.gender && (
+                    <span className="text-gray-400">({c.gender})</span>
+                  )}
                   <span className="text-gray-300">参加費: {fee}</span>
                 </li>
               )
@@ -176,46 +224,68 @@ export default function RegisterPlayerPage(
       )}
 
       {loading ? (
-        <div>Loading players and participants...</div>
+        <div className="text-gray-400">読み込み中...</div>
       ) : error ? (
         <div className="text-red-400">{error}</div>
       ) : (
         <>
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex flex-col">
-              <label className="text-sm mb-1">プレイヤーを選択</label>
-              <select
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-                className="border border-gray-700 bg-black px-3 py-2 rounded min-w-[260px]"
-              >
-                <option value="">-- プレイヤーを選択してください --</option>
-                {players.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} (シーズン {p.seasonRating}, {p.tier}
-                    {alreadyRegisteredIds.has(p.id) ? "、参加済み" : ""})
-                  </option>
-                ))}
-              </select>
+          {!me ? (
+            <p className="text-sm text-gray-400">
+              <Link href="/auth/login" className="text-blue-400 hover:underline">
+                ログイン
+              </Link>
+              すると参加登録・チェックインができます。
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              {canRegister && (
+                <button
+                  type="button"
+                  onClick={handleRegister}
+                  disabled={working}
+                  className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
+                >
+                  {working ? "処理中..." : "参加登録"}
+                </button>
+              )}
+              {canUnregister && (
+                <button
+                  type="button"
+                  onClick={handleUnregister}
+                  disabled={working}
+                  className="border border-gray-600 text-gray-300 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
+                >
+                  {working ? "処理中..." : "参加取消"}
+                </button>
+              )}
+              {canCheckIn && (
+                <button
+                  type="button"
+                  onClick={handleCheckIn}
+                  disabled={working}
+                  className="border border-green-700 text-green-300 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
+                >
+                  {working ? "処理中..." : "チェックイン"}
+                </button>
+              )}
+              {canUncheckIn && (
+                <button
+                  type="button"
+                  onClick={handleUncheckIn}
+                  disabled={working}
+                  className="border border-gray-600 text-gray-300 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
+                >
+                  {working ? "処理中..." : "チェックイン取消"}
+                </button>
+              )}
             </div>
-
-            <button
-              type="button"
-              onClick={handleRegister}
-              disabled={submitting}
-              className="border border-gray-700 px-4 py-2 rounded hover:bg-gray-900 disabled:opacity-50"
-            >
-              {submitting ? "登録中..." : "プレイヤーを登録"}
-            </button>
-          </div>
+          )}
 
           {message && <div className="text-green-400 text-sm">{message}</div>}
           {error && <div className="text-red-400 text-sm">{error}</div>}
 
           <div>
-            <h2 className="text-xl mt-6 mb-3 font-semibold">
-              現在の参加者
-            </h2>
+            <h2 className="text-xl mt-6 mb-3 font-semibold">現在の参加者</h2>
             {participants.length === 0 ? (
               <div className="text-sm text-gray-400">
                 まだ参加者が登録されていません。

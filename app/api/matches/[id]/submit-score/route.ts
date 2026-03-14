@@ -1,11 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { getCurrentUser } from "@/lib/current-user"
 import { decideWinnerFromScores, normalizeScoreJson, stableStringify, type ScoreJson } from "@/lib/result"
 import { calculateElo } from "@/lib/rating"
 import { calculateTier } from "@/lib/tier"
 
 type Body = {
-    userId: string
     clientRequestId: string
     scores: ScoreJson
 }
@@ -17,8 +17,13 @@ export async function POST(
     const { id: matchId } = await params
     const body = (await req.json().catch(() => null)) as Body | null
 
-    if (!body?.userId || !body?.clientRequestId || !Array.isArray(body?.scores)) {
+    if (!body?.clientRequestId || !Array.isArray(body?.scores)) {
         return NextResponse.json({ error: "Invalid body" }, { status: 400 })
+    }
+
+    const user = await getCurrentUser()
+    if (!user) {
+        return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
     let scores: ScoreJson
@@ -62,9 +67,9 @@ export async function POST(
                 return { ok: false as const, status: 400, payload: { error: "Match already finished." } }
             }
 
-            // MVP: only players (and optional referee later) can submit
+            // only authenticated players (and optionally organizer/admin) can submit for their own match
             const allowed = [match.player1Id, match.player2Id].filter(Boolean)
-            if (!allowed.includes(body.userId)) {
+            if (!allowed.includes(user.id)) {
                 return { ok: false as const, status: 403, payload: { error: "Not allowed to submit for this match." } }
             }
 
@@ -86,13 +91,13 @@ export async function POST(
 
             // Replace previous submission by this user (MVP “latest only”)
             await tx.matchScoreSubmission.deleteMany({
-                where: { matchId, submittedById: body.userId },
+                where: { matchId, submittedById: user.id },
             })
 
             await tx.matchScoreSubmission.create({
                 data: {
                     matchId,
-                    submittedById: body.userId,
+                    submittedById: user.id,
                     clientRequestId: body.clientRequestId,
                     scoreJson: scores as any,
                 },

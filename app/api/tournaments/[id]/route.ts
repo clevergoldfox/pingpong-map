@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
+import { getCurrentUser } from "@/lib/current-user"
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -63,6 +64,13 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+  }
+  if (user.role !== "ADMIN" && user.role !== "ORGANIZER") {
+    return NextResponse.json({ error: "Not allowed to update tournaments" }, { status: 403 })
+  }
   const { id } = await params
   const body = await req.json().catch(() => ({}))
 

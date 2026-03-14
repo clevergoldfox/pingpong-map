@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { HeaderUserMenu } from "@/components/HeaderUserMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,8 @@ export default function RootLayout({
           <Link href="/players" className="hover:text-blue-400">
             プレイヤー一覧
           </Link>
+
+          <HeaderUserMenu />
         </nav>
 
         {/* Page Content */}

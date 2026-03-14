@@ -14,12 +14,15 @@ type Participant = {
   }
 }
 
-export default function CheckinPage(
-  { params }: { params: Promise<{ id: string }> }
-){
+type MeUser = { id: string; name: string; role: string }
+
+export default function CheckinPage({
+  params,
+}: { params: Promise<{ id: string }> }) {
   const { id: tournamentId } = use(params)
 
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [me, setMe] = useState<MeUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -29,20 +32,28 @@ export default function CheckinPage(
     try {
       setLoading(true)
       setError(null)
+      const base = getBaseUrl()
+      const [participantsRes, meRes] = await Promise.all([
+        fetch(`${base}/api/tournaments/${tournamentId}/participants`, {
+          cache: "no-store",
+        }),
+        fetch(`${base}/api/auth/me`, { cache: "no-store" }),
+      ])
 
-      const res = await fetch(
-        `${getBaseUrl()}/api/tournaments/${tournamentId}/participants`,
-        { cache: "no-store" }
-      )
-
-      if (!res.ok) {
+      if (!participantsRes.ok) {
         throw new Error("参加者の読み込みに失敗しました")
       }
+      const participantsData = await participantsRes.json()
+      setParticipants(participantsData)
 
-      const data = await res.json()
-      setParticipants(data)
-    } catch (e: any) {
-      setError(e.message ?? "参加者の読み込みに失敗しました")
+      if (meRes.ok) {
+        const meData = await meRes.json()
+        setMe(meData?.user ?? null)
+      } else {
+        setMe(null)
+      }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "参加者の読み込みに失敗しました")
     } finally {
       setLoading(false)
     }
@@ -53,31 +64,51 @@ export default function CheckinPage(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId])
 
-  const checkin = async(userId:string)=>{
+  const checkin = async () => {
+    if (!me) return
     try {
-      setWorkingId(userId)
+      setWorkingId(me.id)
       setError(null)
       setMessage(null)
-
       const res = await fetch(
         `${getBaseUrl()}/api/tournaments/${tournamentId}/checkin`,
         {
-          method:"POST",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          body:JSON.stringify({userId})
+          body: JSON.stringify({ userId: me.id }),
         }
       )
-
-      const data = await res.json()
-
+      const data = await res.json().catch(() => ({}))
       if (!res.ok) {
         throw new Error(data?.error ?? "チェックインに失敗しました")
       }
-
       setMessage("プレイヤーをチェックインしました")
       await loadParticipants()
-    } catch (e: any) {
-      setError(e.message ?? "チェックインに失敗しました")
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "チェックインに失敗しました")
+    } finally {
+      setWorkingId(null)
+    }
+  }
+
+  const uncheckin = async () => {
+    if (!me) return
+    try {
+      setWorkingId(me.id)
+      setError(null)
+      setMessage(null)
+      const res = await fetch(
+        `${getBaseUrl()}/api/tournaments/${tournamentId}/uncheckin`,
+        { method: "POST" }
+      )
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data?.error ?? "チェックイン取消に失敗しました")
+      }
+      setMessage("チェックインを取消しました")
+      await loadParticipants()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "チェックイン取消に失敗しました")
     } finally {
       setWorkingId(null)
     }
@@ -119,14 +150,12 @@ export default function CheckinPage(
               </thead>
               <tbody>
                 {participants.map((p) => {
+                  const isSelf = me && p.userId === me.id
                   const canCheckIn =
-                    p.joinStatus === "PAID" && !p.checkedIn
+                    isSelf && p.joinStatus === "PAID" && !p.checkedIn
 
                   return (
-                    <tr
-                      key={p.id}
-                      className="border-t border-gray-800"
-                    >
+                    <tr key={p.id} className="border-t border-gray-800">
                       <td className="px-3 py-2">
                         {p.user?.name ?? p.userId}
                       </td>
@@ -135,18 +164,37 @@ export default function CheckinPage(
                         {p.checkedIn ? "済" : "未"}
                       </td>
                       <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
-                          disabled={!canCheckIn || workingId === p.userId}
-                          onClick={() => checkin(p.userId)}
-                        >
-                          {p.checkedIn
-                            ? "チェックイン済み"
-                            : workingId === p.userId
-                            ? "処理中..."
-                            : "チェックイン"}
-                        </button>
+                        {isSelf ? (
+                          <>
+                            {p.checkedIn ? (
+                              <button
+                                type="button"
+                                className="border border-gray-600 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50 text-gray-300"
+                                disabled={!!workingId}
+                                onClick={uncheckin}
+                              >
+                                {workingId === p.userId
+                                  ? "処理中..."
+                                  : "チェックイン取消"}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="border border-gray-700 px-3 py-1 rounded hover:bg-gray-900 disabled:opacity-50"
+                                disabled={!canCheckIn || !!workingId}
+                                onClick={checkin}
+                              >
+                                {workingId === p.userId
+                                  ? "処理中..."
+                                  : "チェックイン"}
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">
+                            {p.checkedIn ? "チェックイン済み" : "未チェックイン"}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   )

@@ -1,13 +1,42 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { getBaseUrl } from "@/lib/base-url"
+
+type MeUser = {
+  id: string
+  name: string
+  role: "ADMIN" | "ORGANIZER" | "PLAYER" | string
+}
 
 export function CreateTournamentButton() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [me, setMe] = useState<MeUser | null>(null)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        setChecking(true)
+        const res = await fetch(`${getBaseUrl()}/api/auth/me`, {
+          cache: "no-store",
+        })
+        if (!res.ok) return
+        const data = await res.json().catch(() => ({}))
+        if (!cancelled) setMe(data?.user ?? null)
+      } finally {
+        if (!cancelled) setChecking(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleCreate = async () => {
     try {
@@ -32,17 +61,29 @@ export function CreateTournamentButton() {
     }
   }
 
+  const canCreate =
+    me && (me.role === "ADMIN" || me.role === "ORGANIZER")
+
   return (
-    <div className="mb-6">
-      <button
-        type="button"
-        onClick={handleCreate}
-        disabled={loading}
-        className="border border-gray-600 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
-      >
-        {loading ? "作成中..." : "大会を作成"}
-      </button>
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+    <div className="mb-6 space-y-1 text-sm">
+      {canCreate ? (
+        <button
+          type="button"
+          onClick={handleCreate}
+          disabled={loading}
+          className="border border-gray-600 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
+        >
+          {loading ? "作成中..." : "大会を作成"}
+        </button>
+      ) : (
+        <p className="text-gray-400">
+          大会の作成は主催者・管理者のみ利用できます。ログインすると権限に応じてボタンが表示されます。
+        </p>
+      )}
+      {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
+      {checking && !me && (
+        <p className="text-xs text-gray-500">権限を確認しています...</p>
+      )}
     </div>
   )
 }
