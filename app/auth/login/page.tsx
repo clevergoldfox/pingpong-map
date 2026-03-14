@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getBaseUrl } from "@/lib/base-url"
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
   const search = useSearchParams()
   const redirect = search.get("redirect") || "/tournaments"
@@ -76,3 +76,10 @@ export default function LoginPage() {
   )
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="max-w-md mx-auto p-6 text-gray-400">読み込み中...</div>}>
+      <LoginForm />
+    </Suspense>
+  )
+}

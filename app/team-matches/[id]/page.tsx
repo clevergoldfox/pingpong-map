@@ -250,13 +250,13 @@ export default function TeamMatchPage({
                   </button>
                 </>
               )}
-              {g.resultStatus === "LOCKED" && g.scoreJson && (
+              {g.resultStatus === "LOCKED" && g.scoreJson != null ? (
                 <div className="text-sm text-gray-400">
                   スコア: {JSON.stringify(g.scoreJson)}
                   {g.winnerId && ` / 勝者ID: ${g.winnerId}`}
                   {g.winnerSide != null && ` / 勝者: ${g.winnerSide === 1 ? match.teamA.name : match.teamB.name}`}
                 </div>
-              )}
+              ) : null}
             </div>
           ))}
         </div>

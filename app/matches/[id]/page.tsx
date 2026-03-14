@@ -43,7 +43,7 @@ export default function MatchPage(
       const res = await fetch(`${getBaseUrl()}/api/matches/${matchId}/result`, {
         cache: "no-store",
       })
-      let data: { match?: unknown; submissions?: unknown[]; error?: string }
+      let data: { match?: MatchInfo; submissions?: SubmissionInfo[]; error?: string }
       try {
         data = await res.json()
       } catch {
@@ -52,7 +52,7 @@ export default function MatchPage(
       if (!res.ok) {
         throw new Error(data?.error ?? "Failed to load match")
       }
-      setMatch(data.match)
+      setMatch(data.match ?? null)
       setSubmissions(data.submissions ?? [])
       const m = data.match
       if (m?.player2Id == null && m?.player1Id) setUserId(m.player1Id)
