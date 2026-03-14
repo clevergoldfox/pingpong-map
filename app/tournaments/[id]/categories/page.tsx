@@ -1,6 +1,7 @@
 "use client"
 
 import { use, useEffect, useState } from "react"
+import Link from "next/link"
 import { getBaseUrl } from "@/lib/base-url"
 
 type Category = {
@@ -304,6 +305,14 @@ export default function TournamentCategoriesPage(
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-1">
+                    {c.type === "TEAM" && (
+                      <Link
+                        href={`/tournaments/${tournamentId}/team/${c.id}`}
+                        className="border border-blue-700 text-blue-300 px-3 py-1 rounded hover:bg-gray-900"
+                      >
+                        チーム・団体試合
+                      </Link>
+                    )}
                     <button
                       type="button"
                       disabled={workingCategory === c.id}

@@ -31,6 +31,7 @@ model User {
   matches2      Match[]                 @relation("MatchPlayer2")
   refereeAssignments MatchRefereeAssignment[]
   ratingHistory RatingHistory[]
+  teamMembers   TeamMember[]
   @@index([rating])
 }
 
@@ -100,6 +101,8 @@ model Category {
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   matches    Match[]    @relation("CategoryMatches")
+  teams      Team[]
+  teamMatches TeamMatch[]
 }
 
 enum CategoryGender {
@@ -270,4 +273,78 @@ model TierHistory {
   oldTier   Tier
   newTier   Tier
   createdAt DateTime @default(now())
+}
+
+// ---- Phase 2: 団体戦 (Team match) ----
+
+model Team {
+  id         String   @id @default(uuid())
+  categoryId String
+  name       String
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  category   Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  members    TeamMember[]
+  matchesAsA TeamMatch[] @relation("TeamA")
+  matchesAsB TeamMatch[] @relation("TeamB")
+
+  @@index([categoryId])
+}
+
+model TeamMember {
+  id     String @id @default(uuid())
+  teamId String
+  userId String
+  order  Int    @default(0)
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model TeamMatch {
+  id           String      @id @default(uuid())
+  categoryId   String
+  teamAId      String
+  teamBId      String
+  roundNumber  Int         @default(1)
+  status       MatchStatus @default(SCHEDULED)
+  winnerTeamId String?     // set when all games are finished
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  category Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  teamA    Team       @relation("TeamA", fields: [teamAId], references: [id])
+  teamB    Team       @relation("TeamB", fields: [teamBId], references: [id])
+  games    TeamMatchGame[]
+
+  @@index([categoryId])
+  @@index([teamAId, teamBId])
+}
+
+model TeamMatchGame {
+  id           String       @id @default(uuid())
+  teamMatchId  String
+  slotOrder    Int          // 1, 2, 3... from teamMatchStructure
+  type         String       // SINGLES | DOUBLES
+  player1Id    String?      // singles: team A player
+  player2Id    String?      // singles: team B player
+  player1aId   String?      // doubles: team A
+  player1bId   String?
+  player2aId   String?      // doubles: team B
+  player2bId   String?
+  winnerId     String?      // singles: winner user id
+  winnerSide   Int?         // 1 = team A won, 2 = team B won (doubles)
+  scoreJson   Json?
+  resultStatus ResultStatus @default(NONE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  teamMatch TeamMatch @relation(fields: [teamMatchId], references: [id], onDelete: Cascade)
+
+  @@index([teamMatchId])
 }
