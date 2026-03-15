@@ -1,36 +1,36 @@
 "use client"
 
 import { Suspense, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { getBaseUrl } from "@/lib/base-url"
 
 function LoginForm() {
   const router = useRouter()
-  const search = useSearchParams()
-  const redirect = search.get("redirect") || "/tournaments"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [loginFailed, setLoginFailed] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       setSubmitting(true)
-      setError(null)
+      setLoginFailed(false)
       const res = await fetch(`${getBaseUrl()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       })
-      const data = await res.json().catch(() => ({}))
+      await res.json().catch(() => ({}))
       if (!res.ok) {
-        throw new Error(data?.error ?? "ログインに失敗しました")
+        setLoginFailed(true)
+        return
       }
-      router.push(redirect)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "ログインに失敗しました")
+      router.push("/")
+    } catch {
+      setLoginFailed(true)
     } finally {
       setSubmitting(false)
     }
@@ -63,7 +63,12 @@ function LoginForm() {
             required
           />
         </div>
-        {error && <div className="text-red-400 text-sm">{error}</div>}
+        {loginFailed && (
+          <div className="text-red-400 text-sm space-y-1">
+            <p>ログインが失敗しました。</p>
+            <p>メールアドレスやパスワードが間違っています。</p>
+          </div>
+        )}
         <button
           type="submit"
           disabled={submitting}
@@ -72,6 +77,11 @@ function LoginForm() {
           {submitting ? "ログイン中..." : "ログイン"}
         </button>
       </form>
+      <p className="text-center text-sm text-gray-400">
+        <Link href="/auth/register" className="text-blue-400 hover:underline">
+          新規登録はこちら
+        </Link>
+      </p>
     </div>
   )
 }

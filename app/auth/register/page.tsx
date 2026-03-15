@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { getBaseUrl } from "@/lib/base-url"
 
@@ -116,6 +117,11 @@ export default function RegisterPage() {
           {submitting ? "登録中..." : "登録する"}
         </button>
       </form>
+      <p className="text-center text-sm text-gray-400">
+        <Link href="/auth/login" className="text-blue-400 hover:underline">
+          すでにアカウントをお持ちの方はログイン
+        </Link>
+      </p>
     </div>
   )
 }

@@ -28,27 +28,6 @@ export default async function HomePage() {
         🏓 卓球大会プラットフォーム
       </h1>
 
-      <section>
-        <h2 className="text-xl mb-3">トッププレイヤー</h2>
-
-        {leaderboard.error ? (
-          <div className="text-red-400 text-sm">
-            {leaderboard.error}
-          </div>
-        ) : leaderboard.users && leaderboard.users.length > 0 ? (
-          <div className="space-y-2">
-            {leaderboard.users.slice(0, 5).map((u: any, i: number) => (
-              <div key={u.id}>
-                {i + 1}. {u.name} ({u.tier})
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-gray-400 text-sm">
-            アクティブなシーズンがありません
-          </div>
-        )}
-      </section>
     </div>
   )
 }

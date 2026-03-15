@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { getBaseUrl } from "@/lib/base-url"
 
 type MeUser = {
@@ -11,6 +12,7 @@ type MeUser = {
 }
 
 export function HeaderUserMenu() {
+  const pathname = usePathname()
   const [user, setUser] = useState<MeUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -25,6 +27,7 @@ export function HeaderUserMenu() {
           cache: "no-store",
         })
         if (!res.ok) {
+          if (!cancelled) setUser(null)
           return
         }
         const data = await res.json().catch(() => ({}))
@@ -45,7 +48,7 @@ export function HeaderUserMenu() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
