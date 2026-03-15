@@ -16,8 +16,6 @@
 # next.js
 /.next/
 /out/
-# Use proxy.ts only (middleware.ts is deprecated)
-middleware.ts
 
 # production
 /build
