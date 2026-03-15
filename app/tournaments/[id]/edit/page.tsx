@@ -21,6 +21,7 @@ type Category = {
   roundCount: number | null
   currentRound: number
   isLocked: boolean
+  teamMatchStructure?: Array<{ order: number; type: string }> | null
 }
 
 type Tournament = {
@@ -44,6 +45,23 @@ const STEPS = [
   { id: 3, label: "種目作成" },
   { id: 4, label: "公開" },
 ] as const
+
+const GENDER_LABEL: Record<string, string> = {
+  MALE: "男子",
+  FEMALE: "女子",
+  MIXED: "混成",
+  MIX: "ミックス",
+}
+const TYPE_LABEL: Record<string, string> = {
+  SINGLES: "シングルス",
+  DOUBLES: "ダブルス",
+  TEAM: "団体",
+}
+function getCategoryDisplayName(c: { gender: string | null; type: string }): string {
+  const g = GENDER_LABEL[c.gender ?? ""] ?? c.gender ?? "—"
+  const t = TYPE_LABEL[c.type] ?? c.type
+  return `${g}${t}`
+}
 
 export default function TournamentEditPage({
   params,
@@ -437,6 +455,7 @@ function Step3Categories({
   const [gender, setGender] = useState("MALE")
   const [type, setType] = useState("SINGLES")
   const [format, setFormat] = useState("ROUND_ROBIN")
+  const isMix = gender === "MIX"
   const [leagueMode, setLeagueMode] = useState<"FULL" | "SELECT">("FULL")
   const [fullLeaguePlayerCount, setFullLeaguePlayerCount] = useState(5)
   const [selectLeagueMatchCount, setSelectLeagueMatchCount] = useState(5)
@@ -452,14 +471,47 @@ function Step3Categories({
   const [ratingRestrictionEnabled, setRatingRestrictionEnabled] = useState(false)
   const [ratingMin, setRatingMin] = useState("")
   const [ratingMax, setRatingMax] = useState("")
-  const [refereeRequired, setRefereeRequired] = useState(false)
+  const [refereeRequired, setRefereeRequired] = useState(true)
+  // シングルス・ダブルス=審判あり、団体=なしをデフォルトにするため type 変更時に更新
+  const setTypeWithRefereeDefault = (t: string) => {
+    setType(t)
+    setRefereeRequired(t !== "TEAM")
+  }
   const [entryFeeCard, setEntryFeeCard] = useState("")
   const [entryFeeCash, setEntryFeeCash] = useState("")
   const [roundCount, setRoundCount] = useState(3)
   const [submitting, setSubmitting] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
 
   const isLeague = format === "ROUND_ROBIN" || format === "SELECT_ROUND"
+  const isGroupToTournament = format === "GROUP_TO_TOURNAMENT"
   const isTeam = type === "TEAM"
+  const [groupToLeagueMode, setGroupToLeagueMode] = useState<"FULL" | "SELECT">("FULL")
+  const [groupToAdvance, setGroupToAdvance] = useState<"TOP_1" | "TOP_2" | "TOP_3" | "ALL">("TOP_1")
+
+  const editingCategory = editingCategoryId ? categories.find((c) => c.id === editingCategoryId) : null
+  useEffect(() => {
+    if (!editingCategoryId || !categories.length) return
+    const c = categories.find((cat) => cat.id === editingCategoryId)
+    if (!c) return
+    setGender(c.gender ?? "MALE")
+    setType(c.type)
+    setFormat(c.format)
+    setRefereeRequired(c.refereeRequired)
+    setLeagueMode((c.leagueMode as "FULL" | "SELECT") ?? "FULL")
+    setFullLeaguePlayerCount(c.fullLeaguePlayerCount ?? 5)
+    setSelectLeagueMatchCount(c.selectLeagueMatchCount ?? 5)
+    setRoundCount(c.roundCount ?? 3)
+    setCapacity(c.capacity != null ? String(c.capacity) : "")
+    setMinEntries(c.minEntries != null ? String(c.minEntries) : "")
+    setCourtRange(c.courtRange ?? "")
+    setEntryFeeCard(c.entryFeeCard != null ? String(c.entryFeeCard) : "")
+    setEntryFeeCash(c.entryFeeCash != null ? String(c.entryFeeCash) : "")
+    const ts = c.teamMatchStructure
+    if (Array.isArray(ts) && ts.length > 0) {
+      setTeamSlots(ts.map((s) => ({ order: s.order, type: (s.type === "DOUBLES" ? "DOUBLES" : "SINGLES") })))
+    }
+  }, [editingCategoryId, categories])
 
   const addTeamSlot = () => {
     setTeamSlots((prev) => {
@@ -482,59 +534,64 @@ function Step3Categories({
     )
   }
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  const buildCategoryBody = (): Record<string, unknown> => {
+    const body: Record<string, unknown> = {
+      gender,
+      type,
+      format,
+      roundCount,
+      refereeRequired,
+    }
+    if (!editingCategoryId) body.tournamentId = tournamentId
+    if (isTeam) {
+      body.teamMatchStructure = teamSlots.map((s) => ({ order: s.order, type: s.type }))
+    }
+    if (isLeague) {
+      body.leagueMode = leagueMode
+      if (leagueMode === "FULL") {
+        body.fullLeaguePlayerCount = Math.min(7, Math.max(3, fullLeaguePlayerCount))
+      } else {
+        body.selectLeagueMatchCount = Math.min(10, Math.max(3, selectLeagueMatchCount))
+      }
+    }
+    if (capacity.trim()) body.capacity = parseInt(capacity, 10)
+    if (minEntries.trim()) body.minEntries = parseInt(minEntries, 10)
+    if (courtRange.trim()) body.courtRange = courtRange
+    if (ageRestrictionEnabled) {
+      const min = ageMin.trim() ? parseInt(ageMin, 10) : undefined
+      const max = ageMax.trim() ? parseInt(ageMax, 10) : undefined
+      if (min != null || max != null) body.ageRestriction = { minAge: min, maxAge: max }
+    }
+    if (ratingRestrictionEnabled) {
+      const min = ratingMin.trim() ? parseInt(ratingMin, 10) : undefined
+      const max = ratingMax.trim() ? parseInt(ratingMax, 10) : undefined
+      if (min != null || max != null) body.ratingRestriction = { minRating: min, maxRating: max }
+    }
+    if (entryFeeCard.trim()) body.entryFeeCard = parseInt(entryFeeCard, 10)
+    if (entryFeeCash.trim()) body.entryFeeCash = parseInt(entryFeeCash, 10)
+    return body
+  }
+
+  const handleSubmitCategory = async (e: React.FormEvent) => {
     e.preventDefault()
     onError(null)
     setSubmitting(true)
     try {
-      const body: Record<string, unknown> = {
-        tournamentId,
-        gender,
-        type,
-        format,
-        roundCount,
-        refereeRequired,
-      }
-      if (isTeam) {
-        body.teamMatchStructure = teamSlots.map((s) => ({
-          order: s.order,
-          type: s.type,
-        }))
-      }
-      if (isLeague) {
-        body.leagueMode = leagueMode
-        if (leagueMode === "FULL") {
-          body.fullLeaguePlayerCount = Math.min(7, Math.max(3, fullLeaguePlayerCount))
-        } else {
-          body.selectLeagueMatchCount = Math.min(10, Math.max(3, selectLeagueMatchCount))
-        }
-      }
-      if (capacity.trim()) body.capacity = parseInt(capacity, 10)
-      if (minEntries.trim()) body.minEntries = parseInt(minEntries, 10)
-      if (courtRange.trim()) body.courtRange = courtRange
-      if (ageRestrictionEnabled) {
-        const min = ageMin.trim() ? parseInt(ageMin, 10) : undefined
-        const max = ageMax.trim() ? parseInt(ageMax, 10) : undefined
-        if (min != null || max != null) body.ageRestriction = { minAge: min, maxAge: max }
-      }
-      if (ratingRestrictionEnabled) {
-        const min = ratingMin.trim() ? parseInt(ratingMin, 10) : undefined
-        const max = ratingMax.trim() ? parseInt(ratingMax, 10) : undefined
-        if (min != null || max != null) body.ratingRestriction = { minRating: min, maxRating: max }
-      }
-      if (entryFeeCard.trim()) body.entryFeeCard = parseInt(entryFeeCard, 10)
-      if (entryFeeCash.trim()) body.entryFeeCash = parseInt(entryFeeCash, 10)
-
-      const res = await fetch(`${getBaseUrl()}/api/categories`, {
-        method: "POST",
+      const body = buildCategoryBody()
+      const url = editingCategoryId
+        ? `${getBaseUrl()}/api/categories/${editingCategoryId}`
+        : `${getBaseUrl()}/api/categories`
+      const res = await fetch(url, {
+        method: editingCategoryId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error ?? "種目の追加に失敗しました")
+      if (!res.ok) throw new Error(data?.error ?? (editingCategoryId ? "種目の更新に失敗しました" : "種目の追加に失敗しました"))
+      setEditingCategoryId(null)
       onSaved()
     } catch (e: unknown) {
-      onError(e instanceof Error ? e.message : "種目の追加に失敗しました")
+      onError(e instanceof Error ? e.message : "保存に失敗しました")
     } finally {
       setSubmitting(false)
     }
@@ -549,24 +606,40 @@ function Step3Categories({
           <h3 className="text-sm font-medium mb-2">登録済み種目</h3>
           <ul className="border border-gray-700 rounded divide-y divide-gray-700">
             {categories.map((c) => (
-              <li key={c.id} className="px-3 py-2 text-sm">
-                {c.gender || "—"} / {c.type} / {c.format}
-                {c.leagueMode && ` (${c.leagueMode})`}
-                {c.capacity != null && ` 定員${c.capacity}`}
+              <li key={c.id} className="px-3 py-2 text-sm flex items-center justify-between gap-2">
+                <span className="font-medium">{getCategoryDisplayName(c)}</span>
+                <span className="flex items-center gap-2">
+                  <span className="text-gray-400 text-xs">
+                    {c.format}
+                    {c.leagueMode && ` (${c.leagueMode})`}
+                    {c.capacity != null && ` 定員${c.capacity}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setEditingCategoryId(c.id)}
+                    className="text-xs border border-gray-600 px-2 py-1 rounded hover:bg-gray-800"
+                  >
+                    編集
+                  </button>
+                </span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <form onSubmit={handleAddCategory} className="space-y-4 max-w-xl border border-gray-800 rounded p-4">
-        <h3 className="font-medium">種目を追加</h3>
+      <form onSubmit={handleSubmitCategory} className="space-y-4 max-w-xl border border-gray-800 rounded p-4">
+        <h3 className="font-medium">{editingCategoryId ? "種目を編集" : "種目を追加"}</h3>
         <div className="grid gap-3 text-sm">
           <div>
             <label className="block mb-1">性別 *</label>
             <select
               value={gender}
-              onChange={(e) => setGender(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                setGender(v)
+                if (v === "MIX") setType("DOUBLES")
+              }}
               className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
             >
               <option value="MALE">男子</option>
@@ -579,13 +652,16 @@ function Step3Categories({
             <label className="block mb-1">種目 *</label>
             <select
               value={type}
-              onChange={(e) => setType(e.target.value)}
+              onChange={(e) => setTypeWithRefereeDefault(e.target.value)}
               className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
             >
-              <option value="SINGLES">シングルス</option>
+              <option value="SINGLES" disabled={isMix}>シングルス</option>
               <option value="DOUBLES">ダブルス</option>
-              <option value="TEAM">団体</option>
+              <option value="TEAM" disabled={isMix}>団体</option>
             </select>
+            {isMix && (
+              <p className="text-xs text-gray-400 mt-1">ミックスはダブルスのみです</p>
+            )}
           </div>
           {isTeam && (
             <div className="border border-gray-700 rounded p-3 space-y-2">
@@ -648,6 +724,35 @@ function Step3Categories({
               <option value="GROUP_TO_TOURNAMENT">予選リーグ→決勝トーナメント</option>
             </select>
           </div>
+          {isGroupToTournament && (
+            <div className="border border-gray-700 rounded p-3 space-y-3">
+              <div className="font-medium text-sm">予選リーグ→決勝トーナメントの設定</div>
+              <div>
+                <label className="block mb-1 text-sm">予選リーグ方式</label>
+                <select
+                  value={groupToLeagueMode}
+                  onChange={(e) => setGroupToLeagueMode(e.target.value as "FULL" | "SELECT")}
+                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded text-sm"
+                >
+                  <option value="FULL">フル</option>
+                  <option value="SELECT">セレクト</option>
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm">決勝トーナメント進出</label>
+                <select
+                  value={groupToAdvance}
+                  onChange={(e) => setGroupToAdvance(e.target.value as "TOP_1" | "TOP_2" | "TOP_3" | "ALL")}
+                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded text-sm"
+                >
+                  <option value="TOP_1">1位のみ</option>
+                  <option value="TOP_2">1・2位</option>
+                  <option value="TOP_3">1・2・3位</option>
+                  <option value="ALL">全ての順位</option>
+                </select>
+              </div>
+            </div>
+          )}
           {isLeague && (
             <>
               <div>
@@ -679,45 +784,49 @@ function Step3Categories({
                 </div>
               )}
               {leagueMode === "SELECT" && (
-                <div>
-                  <label className="block mb-1">試合数（3〜10）</label>
-                  <input
-                    type="number"
-                    min={3}
-                    max={10}
-                    value={selectLeagueMatchCount}
-                    onChange={(e) =>
-                      setSelectLeagueMatchCount(
-                        parseInt(e.target.value, 10) || 3
-                      )
-                    }
-                    className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-                  />
-                </div>
+                <>
+                  <div>
+                    <label className="block mb-1">試合数（3〜10）</label>
+                    <input
+                      type="number"
+                      min={3}
+                      max={10}
+                      value={selectLeagueMatchCount}
+                      onChange={(e) =>
+                        setSelectLeagueMatchCount(
+                          parseInt(e.target.value, 10) || 3
+                        )
+                      }
+                      className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1">ラウンド数</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={roundCount}
+                      onChange={(e) =>
+                        setRoundCount(parseInt(e.target.value, 10) || 1)
+                      }
+                      className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                    />
+                  </div>
+                </>
               )}
-              <div>
-                <label className="block mb-1">ラウンド数（セレクト時等）</label>
-                <input
-                  type="number"
-                  min={1}
-                  value={roundCount}
-                  onChange={(e) =>
-                    setRoundCount(parseInt(e.target.value, 10) || 1)
-                  }
-                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-                />
-              </div>
             </>
           )}
           <div>
-            <label className="block mb-1">定員</label>
+            <label className="block mb-1">
+              {type === "DOUBLES" ? "組数" : type === "TEAM" ? "チーム数" : "人数"}
+            </label>
             <input
               type="number"
               min={0}
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-              placeholder="例: 32"
+              placeholder={type === "DOUBLES" ? "例: 16" : type === "TEAM" ? "例: 8" : "例: 32"}
             />
           </div>
           <div>
@@ -804,14 +913,23 @@ function Step3Categories({
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="refereeRequired"
-              checked={refereeRequired}
-              onChange={(e) => setRefereeRequired(e.target.checked)}
-            />
-            <label htmlFor="refereeRequired">審判あり</label>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={refereeRequired}
+                onChange={() => setRefereeRequired(true)}
+              />
+              審判割当あり
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={!refereeRequired}
+                onChange={() => setRefereeRequired(false)}
+              />
+              審判割当なし
+            </label>
           </div>
           <div>
             <label className="block mb-1">参加費（事前・カード）円</label>
@@ -834,13 +952,24 @@ function Step3Categories({
             />
           </div>
         </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="border border-gray-600 px-4 py-2 rounded hover:bg-gray-800 disabled:opacity-50"
-        >
-          {submitting ? "追加中..." : "種目を追加"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="border border-gray-600 px-4 py-2 rounded hover:bg-gray-800 disabled:opacity-50"
+          >
+            {submitting ? "保存中..." : editingCategoryId ? "更新" : "完了"}
+          </button>
+          {editingCategoryId && (
+            <button
+              type="button"
+              onClick={() => setEditingCategoryId(null)}
+              className="border border-gray-600 px-4 py-2 rounded hover:bg-gray-800"
+            >
+              キャンセル
+            </button>
+          )}
+        </div>
       </form>
 
       <p className="text-gray-400 text-sm">
@@ -903,7 +1032,7 @@ function Step4Publish({
           disabled={saving || tournament.categories.length === 0}
           className="border border-green-700 bg-green-900/30 px-4 py-2 rounded hover:bg-green-900/50 disabled:opacity-50"
         >
-          {saving ? "公開中..." : "参加受付で公開する"}
+          {saving ? "公開中..." : "公開"}
         </button>
         <p className="text-gray-400 text-sm self-center">
           公開するとユーザーが大会一覧で見られ、エントリー可能になります。

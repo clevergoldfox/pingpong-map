@@ -8,9 +8,27 @@ type Category = {
   id: string
   type: string
   format: string
+  gender?: string | null
   roundCount: number | null
   currentRound: number
   isLocked: boolean
+}
+
+const GENDER_LABEL: Record<string, string> = {
+  MALE: "男子",
+  FEMALE: "女子",
+  MIXED: "混成",
+  MIX: "ミックス",
+}
+const TYPE_LABEL: Record<string, string> = {
+  SINGLES: "シングルス",
+  DOUBLES: "ダブルス",
+  TEAM: "団体",
+}
+function getCategoryDisplayName(c: { gender?: string | null; type: string }): string {
+  const g = GENDER_LABEL[c.gender ?? ""] ?? c.gender ?? "—"
+  const t = TYPE_LABEL[c.type] ?? c.type
+  return `${g}${t}`
 }
 
 type TournamentWithCategories = {
@@ -295,7 +313,7 @@ export default function TournamentCategoriesPage(
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <div className="font-semibold">
-                        {c.type} / {c.format}
+                        {getCategoryDisplayName(c)} / {c.format}
                       </div>
                       <div className="text-gray-400 text-xs">
                         第 {c.currentRound} / {c.roundCount ?? "?"} ラウンド •{" "}
