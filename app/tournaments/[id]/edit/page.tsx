@@ -225,8 +225,25 @@ function Step2TournamentDetails({
   }
 
   const dateOnlyToIsoStart = (dateOnly: string) => {
-    // dateOnly: YYYY-MM-DD
     return dateOnly ? `${dateOnly}T00:00:00` : null
+  }
+
+  const isoToDatetimeLocal = (iso: string | null | undefined): string => {
+    if (!iso) return ""
+    const d = new Date(iso)
+    if (Number.isNaN(d.getTime())) return ""
+    const yyyy = d.getFullYear()
+    const mm = String(d.getMonth() + 1).padStart(2, "0")
+    const dd = String(d.getDate()).padStart(2, "0")
+    const hh = String(d.getHours()).padStart(2, "0")
+    const min = String(d.getMinutes()).padStart(2, "0")
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`
+  }
+
+  const datetimeLocalToIso = (v: string) => {
+    if (!v || !v.trim()) return null
+    if (v.length >= 16 && v.includes("T")) return `${v.slice(0, 16)}:00`
+    return dateOnlyToIsoStart(v.slice(0, 10))
   }
 
   const openNativeDatePicker = (el: HTMLInputElement | null) => {
@@ -245,13 +262,42 @@ function Step2TournamentDetails({
     location: tournament.location,
     startDate: tournament.startDate?.slice(0, 16) || "",
     mapUrl: tournament.mapUrl || "",
-    openAt: asDateOnly(tournament.openAt),
-    entryDeadlineAt: asDateOnly(tournament.entryDeadlineAt),
+    openAt: tournament.openAt ? (tournament.openAt.slice(0, 16) || asDateOnly(tournament.openAt) + "T09:00") : "",
+    entryDeadlineAt: tournament.entryDeadlineAt ? (tournament.entryDeadlineAt.slice(0, 16) || asDateOnly(tournament.entryDeadlineAt) + "T23:59") : "",
     cancelPolicy: tournament.cancelPolicy || "",
     organizer: tournament.organizer || "",
     sponsor: tournament.sponsor || "",
     description: tournament.description || "",
   })
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      name: tournament.name,
+      location: tournament.location,
+      startDate: tournament.startDate?.slice(0, 16) || "",
+      mapUrl: tournament.mapUrl || "",
+      openAt: tournament.openAt ? (tournament.openAt.slice(0, 16) || asDateOnly(tournament.openAt) + "T09:00") : "",
+      entryDeadlineAt: tournament.entryDeadlineAt ? (tournament.entryDeadlineAt.slice(0, 16) || asDateOnly(tournament.entryDeadlineAt) + "T23:59") : "",
+      cancelPolicy: tournament.cancelPolicy || "",
+      organizer: tournament.organizer || prev.organizer,
+      sponsor: tournament.sponsor || "",
+      description: tournament.description || "",
+    }))
+  }, [tournament.id, tournament.name, tournament.location, tournament.startDate, tournament.mapUrl, tournament.openAt, tournament.entryDeadlineAt, tournament.cancelPolicy, tournament.organizer, tournament.sponsor, tournament.description])
+
+  useEffect(() => {
+    if (form.organizer.trim()) return
+    let cancelled = false
+    fetch(`${getBaseUrl()}/api/auth/me`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled || !data?.name) return
+        setForm((prev) => ({ ...prev, organizer: prev.organizer || data.name }))
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -268,8 +314,8 @@ function Step2TournamentDetails({
             location: form.location,
             startDate: form.startDate || undefined,
             mapUrl: form.mapUrl || null,
-            openAt: dateOnlyToIsoStart(form.openAt),
-            entryDeadlineAt: dateOnlyToIsoStart(form.entryDeadlineAt),
+            openAt: datetimeLocalToIso(form.openAt),
+            entryDeadlineAt: datetimeLocalToIso(form.entryDeadlineAt),
             cancelPolicy: form.cancelPolicy || null,
             organizer: form.organizer || null,
             sponsor: form.sponsor || null,
@@ -302,6 +348,18 @@ function Step2TournamentDetails({
           />
         </div>
         <div>
+          <label className="block mb-1">開催日 *</label>
+          <input
+            type="datetime-local"
+            value={form.startDate}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, startDate: e.target.value }))
+            }
+            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            required
+          />
+        </div>
+        <div>
           <label className="block mb-1">会場場所 *</label>
           <input
             type="text"
@@ -323,59 +381,27 @@ function Step2TournamentDetails({
         </div>
         <div>
           <label className="block mb-1">開場時間</label>
-          <div className="flex items-stretch gap-2">
-            <input
-              id="openAt"
-              type="date"
-              value={form.openAt}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, openAt: e.target.value }))
-              }
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-            />
-            <button
-              type="button"
-              onClick={() =>
-                openNativeDatePicker(
-                  document.getElementById("openAt") as HTMLInputElement | null
-                )
-              }
-              className="border border-gray-700 px-3 rounded hover:bg-gray-900"
-              aria-label="開場時間のカレンダーを開く"
-              title="カレンダーを開く"
-            >
-              📅
-            </button>
-          </div>
+          <input
+            id="openAt"
+            type="datetime-local"
+            value={form.openAt}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, openAt: e.target.value }))
+            }
+            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+          />
         </div>
         <div>
-          <label className="block mb-1">申込み締切日時</label>
-          <div className="flex items-stretch gap-2">
-            <input
-              id="entryDeadlineAt"
-              type="date"
-              value={form.entryDeadlineAt}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, entryDeadlineAt: e.target.value }))
-              }
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-            />
-            <button
-              type="button"
-              onClick={() =>
-                openNativeDatePicker(
-                  document.getElementById(
-                    "entryDeadlineAt"
-                  ) as HTMLInputElement | null
-                )
-              }
-              className="border border-gray-700 px-3 rounded hover:bg-gray-900"
-              aria-label="申込み締切日時のカレンダーを開く"
-              title="カレンダーを開く"
-            >
-              📅
-            </button>
-          </div>
+          <label className="block mb-1">申込み締切日</label>
+          <input
+            id="entryDeadlineAt"
+            type="datetime-local"
+            value={form.entryDeadlineAt}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, entryDeadlineAt: e.target.value }))
+            }
+            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+          />
         </div>
         <div>
           <label className="block mb-1">キャンセルポリシー</label>
@@ -396,37 +422,26 @@ function Step2TournamentDetails({
               setForm((f) => ({ ...f, organizer: e.target.value }))
             }
             className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            placeholder="ログイン中の名前が自動で入ります"
           />
         </div>
         <div>
           <label className="block mb-1">協賛団体</label>
-          <input
-            type="text"
+          <textarea
             value={form.sponsor}
             onChange={(e) => setForm((f) => ({ ...f, sponsor: e.target.value }))}
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700 bg-black px-3 py-2 rounded min-h-[60px]"
+            placeholder="1行に1団体ずつ入力"
           />
         </div>
         <div>
-          <label className="block mb-1">大会説明・注意事項</label>
+          <label className="block mb-1">大会説明/注意事項</label>
           <textarea
             value={form.description}
             onChange={(e) =>
               setForm((f) => ({ ...f, description: e.target.value }))
             }
             className="w-full border border-gray-700 bg-black px-3 py-2 rounded min-h-[120px]"
-          />
-        </div>
-        <div>
-          <label className="block mb-1">大会開始日 *</label>
-          <input
-            type="datetime-local"
-            value={form.startDate}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, startDate: e.target.value }))
-            }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-            required
           />
         </div>
       </div>
@@ -770,7 +785,7 @@ function Step3Categories({
               </div>
               {leagueMode === "FULL" && (
                 <div>
-                  <label className="block mb-1">人数（3〜7）</label>
+                  <label className="block mb-1">リーグ構成人数(組数/チーム数)</label>
                   <input
                     type="number"
                     min={3}
@@ -780,7 +795,9 @@ function Step3Categories({
                       setFullLeaguePlayerCount(parseInt(e.target.value, 10) || 3)
                     }
                     className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                    placeholder="3〜7"
                   />
+                  <p className="text-xs text-gray-400 mt-0.5">種目に応じて人数・組数・チーム数です</p>
                 </div>
               )}
               {leagueMode === "SELECT" && (
@@ -818,7 +835,7 @@ function Step3Categories({
           )}
           <div>
             <label className="block mb-1">
-              {type === "DOUBLES" ? "組数" : type === "TEAM" ? "チーム数" : "人数"}
+              定員（{type === "DOUBLES" ? "組数" : type === "TEAM" ? "チーム数" : "人数"}）
             </label>
             <input
               type="number"
