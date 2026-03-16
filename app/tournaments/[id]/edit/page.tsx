@@ -528,6 +528,15 @@ function Step3Categories({
     }
   }, [editingCategoryId, categories])
 
+  // 形式に応じてリーグ方式を自動設定（フル / セレクト）
+  useEffect(() => {
+    if (format === "ROUND_ROBIN") {
+      setLeagueMode("FULL")
+    } else if (format === "SELECT_ROUND") {
+      setLeagueMode("SELECT")
+    }
+  }, [format])
+
   const addTeamSlot = () => {
     setTeamSlots((prev) => {
       const nextOrder = prev.length + 1
@@ -770,22 +779,15 @@ function Step3Categories({
           )}
           {isLeague && (
             <>
-              <div>
-                <label className="block mb-1">リーグ方式</label>
-                <select
-                  value={leagueMode}
-                  onChange={(e) =>
-                    setLeagueMode(e.target.value as "FULL" | "SELECT")
-                  }
-                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-                >
-                  <option value="FULL">フル（全対戦・3〜7人）</option>
-                  <option value="SELECT">セレクト（試合数指定・3〜10試合）</option>
-                </select>
-              </div>
               {leagueMode === "FULL" && (
                 <div>
-                  <label className="block mb-1">リーグ構成人数(組数/チーム数)</label>
+                  <label className="block mb-1">
+                    {type === "DOUBLES"
+                      ? "リーグ構成組数"
+                      : type === "TEAM"
+                      ? "リーグ構成チーム数"
+                      : "リーグ構成人数"}
+                  </label>
                   <input
                     type="number"
                     min={3}
@@ -797,7 +799,6 @@ function Step3Categories({
                     className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
                     placeholder="3〜7"
                   />
-                  <p className="text-xs text-gray-400 mt-0.5">種目に応じて人数・組数・チーム数です</p>
                 </div>
               )}
               {leagueMode === "SELECT" && (
@@ -835,7 +836,7 @@ function Step3Categories({
           )}
           <div>
             <label className="block mb-1">
-              定員（{type === "DOUBLES" ? "組数" : type === "TEAM" ? "チーム数" : "人数"}）
+              定員（{type === "DOUBLES" ? "組" : type === "TEAM" ? "チーム" : "人"}）
             </label>
             <input
               type="number"
@@ -847,7 +848,9 @@ function Step3Categories({
             />
           </div>
           <div>
-            <label className="block mb-1">最小催行人数</label>
+            <label className="block mb-1">
+              最小催行{type === "DOUBLES" ? "組数" : type === "TEAM" ? "チーム数" : "人数"}
+            </label>
             <input
               type="number"
               min={0}
