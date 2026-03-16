@@ -32,6 +32,8 @@ model User {
   refereeAssignments MatchRefereeAssignment[]
   ratingHistory RatingHistory[]
   teamMembers   TeamMember[]
+  representedTeamEntries TeamEntry[] @relation("TeamEntryRepresentative")
+  teamEntryMembers TeamEntryMember[]
   @@index([rating])
 }
 
@@ -91,6 +93,8 @@ model Category {
   fullLeaguePlayerCount  Int?    // 3〜7（フル時）
   selectLeagueMatchCount Int?    // 3〜10（セレクト時）
   tablesPerMatch         Int?    // 団体戦: 1対戦あたりの台数（1 or 2）
+  teamMinMembers         Int?    // 団体戦: 最小人数
+  teamMaxMembers         Int?    // 団体戦: 最大人数
   capacity               Int?
   minEntries             Int?
   courtRange             String?
@@ -104,6 +108,7 @@ model Category {
   matches    Match[]    @relation("CategoryMatches")
   teams      Team[]
   teamMatches TeamMatch[]
+  teamEntries TeamEntry[]
 }
 
 enum CategoryGender {
@@ -213,6 +218,59 @@ model TournamentParticipant {
   user       User       @relation(fields: [userId], references: [id])
 
   @@unique([tournamentId, userId])
+}
+
+// ---- Phase 3: 団体戦 申込み（代表者＋メンバー招待/承認） ----
+
+enum TeamEntryStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+enum TeamEntryMemberStatus {
+  INVITED
+  APPROVED
+  REJECTED
+}
+
+model TeamEntry {
+  id                   String          @id @default(uuid())
+  tournamentId         String
+  categoryId           String
+  teamName             String
+  representativeUserId String
+  status               TeamEntryStatus @default(PENDING)
+  confirmedAt          DateTime?
+  canceledAt           DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  tournament      Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  category        Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  representative  User       @relation("TeamEntryRepresentative", fields: [representativeUserId], references: [id])
+  members         TeamEntryMember[]
+
+  @@index([tournamentId])
+  @@index([categoryId])
+  @@index([representativeUserId])
+  @@unique([categoryId, representativeUserId])
+}
+
+model TeamEntryMember {
+  id          String               @id @default(uuid())
+  teamEntryId String
+  userId      String
+  status      TeamEntryMemberStatus @default(INVITED)
+  invitedAt   DateTime             @default(now())
+  respondedAt DateTime?
+
+  teamEntry TeamEntry @relation(fields: [teamEntryId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([teamEntryId, userId])
+  @@index([userId])
+  @@index([teamEntryId])
 }
 
 model MatchScoreSubmission {
