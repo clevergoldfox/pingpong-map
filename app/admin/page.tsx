@@ -86,7 +86,7 @@ export default function AdminPage(){
           <div className="flex flex-col gap-1">
             <label>シーズン名（任意）</label>
             <input
-              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              className="border border-gray-700   px-3 py-2 rounded"
               value={seasonName}
               onChange={(e) => setSeasonName(e.target.value)}
               placeholder="例: 2026年春シーズン"
@@ -95,7 +95,7 @@ export default function AdminPage(){
           <div className="flex flex-col gap-1">
             <label>期間（日数）</label>
             <input
-              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              className="border border-gray-700   px-3 py-2 rounded"
               value={durationDays}
               onChange={(e) => setDurationDays(e.target.value)}
               placeholder="90"

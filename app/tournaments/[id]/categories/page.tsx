@@ -231,7 +231,7 @@ export default function TournamentCategoriesPage(
           <div className="flex flex-col gap-1">
             <label>性別</label>
             <select
-              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              className="border border-gray-700   px-3 py-2 rounded"
               value={newGender}
               onChange={(e) => setNewGender(e.target.value)}
             >
@@ -244,7 +244,7 @@ export default function TournamentCategoriesPage(
           <div className="flex flex-col gap-1">
             <label>種別</label>
             <select
-              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              className="border border-gray-700   px-3 py-2 rounded"
               value={newType}
               onChange={(e) => setNewType(e.target.value)}
             >
@@ -256,7 +256,7 @@ export default function TournamentCategoriesPage(
           <div className="flex flex-col gap-1">
             <label>形式</label>
             <select
-              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              className="border border-gray-700   px-3 py-2 rounded"
               value={newFormat}
               onChange={(e) => setNewFormat(e.target.value)}
             >
@@ -271,7 +271,7 @@ export default function TournamentCategoriesPage(
           <div className="flex flex-col gap-1">
             <label>ラウンド数（スイス用）</label>
             <input
-              className="border border-gray-700 bg-black px-3 py-2 rounded"
+              className="border border-gray-700   px-3 py-2 rounded"
               value={newRoundCount}
               onChange={(e) => setNewRoundCount(e.target.value)}
               placeholder="例: 3"

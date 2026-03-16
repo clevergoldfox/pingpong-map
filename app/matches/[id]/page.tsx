@@ -184,7 +184,7 @@ export default function MatchPage(
                 あなた（対戦プレイヤーのいずれかを選択）
               </label>
               <select
-                className="border border-gray-700 bg-black px-3 py-2 rounded text-sm"
+                className="border border-gray-700   px-3 py-2 rounded text-sm"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
               >
@@ -223,7 +223,7 @@ export default function MatchPage(
                     </span>
                     <input
                       type="number"
-                      className="w-20 border border-gray-700 bg-black px-2 py-1 rounded"
+                      className="w-20 border border-gray-700   px-2 py-1 rounded"
                       value={g.p1}
                       onChange={(e) =>
                         updateGame(idx, "p1", e.target.value)
@@ -233,7 +233,7 @@ export default function MatchPage(
                     <span className="text-gray-400">:</span>
                     <input
                       type="number"
-                      className="w-20 border border-gray-700 bg-black px-2 py-1 rounded"
+                      className="w-20 border border-gray-700   px-2 py-1 rounded"
                       value={g.p2}
                       onChange={(e) =>
                         updateGame(idx, "p2", e.target.value)

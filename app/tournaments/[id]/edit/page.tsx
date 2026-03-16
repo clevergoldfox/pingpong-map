@@ -373,7 +373,7 @@ function Step2TournamentDetails({
             type="text"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             required
           />
         </div>
@@ -385,7 +385,7 @@ function Step2TournamentDetails({
             onChange={(e) =>
               setForm((f) => ({ ...f, startDate: e.target.value }))
             }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             required
           />
         </div>
@@ -395,7 +395,7 @@ function Step2TournamentDetails({
             type="text"
             value={form.location}
             onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             required
           />
         </div>
@@ -405,7 +405,7 @@ function Step2TournamentDetails({
             type="url"
             value={form.mapUrl}
             onChange={(e) => setForm((f) => ({ ...f, mapUrl: e.target.value }))}
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             placeholder="https://..."
           />
         </div>
@@ -418,7 +418,7 @@ function Step2TournamentDetails({
             onChange={(e) =>
               setForm((f) => ({ ...f, openAt: e.target.value }))
             }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
           />
         </div>
         <div>
@@ -430,7 +430,7 @@ function Step2TournamentDetails({
             onChange={(e) =>
               setForm((f) => ({ ...f, entryDeadlineAt: e.target.value }))
             }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
           />
         </div>
         <div>
@@ -440,7 +440,7 @@ function Step2TournamentDetails({
             onChange={(e) =>
               setForm((f) => ({ ...f, cancelPolicy: e.target.value }))
             }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded min-h-[80px]"
+            className="w-full border border-gray-700   px-3 py-2 rounded min-h-[80px]"
           />
         </div>
         <div>
@@ -451,7 +451,7 @@ function Step2TournamentDetails({
             onChange={(e) =>
               setForm((f) => ({ ...f, organizer: e.target.value }))
             }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             placeholder="ログイン中の名前が自動で入ります"
           />
         </div>
@@ -460,7 +460,7 @@ function Step2TournamentDetails({
           <textarea
             value={form.sponsor}
             onChange={(e) => setForm((f) => ({ ...f, sponsor: e.target.value }))}
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded min-h-[60px]"
+            className="w-full border border-gray-700   px-3 py-2 rounded min-h-[60px]"
             placeholder="1行に1団体ずつ入力"
           />
         </div>
@@ -471,7 +471,7 @@ function Step2TournamentDetails({
             onChange={(e) =>
               setForm((f) => ({ ...f, description: e.target.value }))
             }
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded min-h-[120px]"
+            className="w-full border border-gray-700   px-3 py-2 rounded min-h-[120px]"
           />
         </div>
       </div>
@@ -724,7 +724,7 @@ function Step3Categories({
                 setGender(v)
                 if (v === "MIX") setType("DOUBLES")
               }}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
             >
               <option value="MALE">男子</option>
               <option value="FEMALE">女子</option>
@@ -737,7 +737,7 @@ function Step3Categories({
             <select
               value={type}
               onChange={(e) => setTypeWithRefereeDefault(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
             >
               <option value="SINGLES" disabled={isMix}>シングルス</option>
               <option value="DOUBLES">ダブルス</option>
@@ -773,7 +773,7 @@ function Step3Categories({
                           e.target.value as "SINGLES" | "DOUBLES"
                         )
                       }
-                      className="flex-1 border border-gray-700 bg-black px-3 py-2 rounded"
+                      className="flex-1 border border-gray-700   px-3 py-2 rounded"
                     >
                       <option value="SINGLES">シングルス</option>
                       <option value="DOUBLES">ダブルス</option>
@@ -798,7 +798,7 @@ function Step3Categories({
                 <select
                   value={tablesPerMatch}
                   onChange={(e) => setTablesPerMatch(parseInt(e.target.value, 10) || 1)}
-                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                  className="w-full border border-gray-700   px-3 py-2 rounded"
                 >
                   <option value={1}>1台</option>
                   <option value={2}>2台</option>
@@ -811,7 +811,7 @@ function Step3Categories({
             <select
               value={format}
               onChange={(e) => setFormat(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
             >
               <option value="ROUND_ROBIN">リーグ戦（フル）</option>
               <option value="SELECT_ROUND">リーグ戦（セレクト）</option>
@@ -827,7 +827,7 @@ function Step3Categories({
                 <select
                   value={groupToLeagueMode}
                   onChange={(e) => setGroupToLeagueMode(e.target.value as "FULL" | "SELECT")}
-                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded text-sm"
+                  className="w-full border border-gray-700   px-3 py-2 rounded text-sm"
                 >
                   <option value="FULL">フル</option>
                   <option value="SELECT">セレクト</option>
@@ -838,7 +838,7 @@ function Step3Categories({
                 <select
                   value={groupToAdvance}
                   onChange={(e) => setGroupToAdvance(e.target.value as "TOP_1" | "TOP_2" | "TOP_3" | "ALL")}
-                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded text-sm"
+                  className="w-full border border-gray-700   px-3 py-2 rounded text-sm"
                 >
                   <option value="TOP_1">1位のみ</option>
                   <option value="TOP_2">1・2位</option>
@@ -867,7 +867,7 @@ function Step3Categories({
                     onChange={(e) =>
                       setFullLeaguePlayerCount(parseInt(e.target.value, 10) || 3)
                     }
-                    className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                    className="w-full border border-gray-700   px-3 py-2 rounded"
                     placeholder="3〜7"
                   />
                 </div>
@@ -886,7 +886,7 @@ function Step3Categories({
                           parseInt(e.target.value, 10) || 3
                         )
                       }
-                      className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                      className="w-full border border-gray-700   px-3 py-2 rounded"
                     />
                   </div>
                   <div>
@@ -898,7 +898,7 @@ function Step3Categories({
                       onChange={(e) =>
                         setRoundCount(parseInt(e.target.value, 10) || 1)
                       }
-                      className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                      className="w-full border border-gray-700   px-3 py-2 rounded"
                     />
                   </div>
                 </>
@@ -914,7 +914,7 @@ function Step3Categories({
               min={0}
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
               placeholder={type === "DOUBLES" ? "例: 16" : type === "TEAM" ? "例: 8" : "例: 32"}
             />
           </div>
@@ -927,7 +927,7 @@ function Step3Categories({
               min={0}
               value={minEntries}
               onChange={(e) => setMinEntries(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
               placeholder="例: 4"
             />
           </div>
@@ -939,7 +939,7 @@ function Step3Categories({
                 min={0}
                 value={courtStart}
                 onChange={(e) => setCourtStart(e.target.value)}
-                className="w-20 border border-gray-700 bg-black px-3 py-2 rounded"
+                className="w-20 border border-gray-700   px-3 py-2 rounded"
                 placeholder="1"
               />
               <span className="text-gray-400">〜</span>
@@ -948,7 +948,7 @@ function Step3Categories({
                 min={0}
                 value={courtEnd}
                 onChange={(e) => setCourtEnd(e.target.value)}
-                className="w-20 border border-gray-700 bg-black px-3 py-2 rounded"
+                className="w-20 border border-gray-700   px-3 py-2 rounded"
                 placeholder="4"
               />
               <span className="text-gray-400 text-xs ml-1">コート</span>
@@ -971,7 +971,7 @@ function Step3Categories({
                   min={0}
                   value={ageMin}
                   onChange={(e) => setAgeMin(e.target.value)}
-                  className="w-20 border border-gray-700 bg-black px-2 py-1 rounded"
+                  className="w-20 border border-gray-700   px-2 py-1 rounded"
                   placeholder="最小"
                 />
                 <span className="text-gray-400">〜</span>
@@ -980,7 +980,7 @@ function Step3Categories({
                   min={0}
                   value={ageMax}
                   onChange={(e) => setAgeMax(e.target.value)}
-                  className="w-20 border border-gray-700 bg-black px-2 py-1 rounded"
+                  className="w-20 border border-gray-700   px-2 py-1 rounded"
                   placeholder="最大"
                 />
                 <span className="text-gray-400 text-xs">歳</span>
@@ -1003,7 +1003,7 @@ function Step3Categories({
                   type="number"
                   value={ratingMin}
                   onChange={(e) => setRatingMin(e.target.value)}
-                  className="w-24 border border-gray-700 bg-black px-2 py-1 rounded"
+                  className="w-24 border border-gray-700   px-2 py-1 rounded"
                   placeholder="最小"
                 />
                 <span className="text-gray-400">〜</span>
@@ -1011,7 +1011,7 @@ function Step3Categories({
                   type="number"
                   value={ratingMax}
                   onChange={(e) => setRatingMax(e.target.value)}
-                  className="w-24 border border-gray-700 bg-black px-2 py-1 rounded"
+                  className="w-24 border border-gray-700   px-2 py-1 rounded"
                   placeholder="最大"
                 />
               </div>
@@ -1042,7 +1042,7 @@ function Step3Categories({
               min={0}
               value={entryFeeCard}
               onChange={(e) => setEntryFeeCard(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
             />
           </div>
           <div>
@@ -1052,7 +1052,7 @@ function Step3Categories({
               min={0}
               value={entryFeeCash}
               onChange={(e) => setEntryFeeCash(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
             />
           </div>
         </div>

@@ -63,7 +63,7 @@ export function TournamentStatusControls({
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value as TournamentStatus)}
-          className="border border-gray-700 bg-black px-2 py-1 rounded text-xs md:text-sm"
+          className="border border-gray-700   px-2 py-1 rounded text-xs md:text-sm"
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>

@@ -256,7 +256,7 @@ export default function TeamEntryPage({
             <label className="block text-xs text-gray-300 mb-1">チーム名</label>
             <input
               type="text"
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+              className="w-full border border-gray-700   px-3 py-2 rounded"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
               placeholder="例: ピンポンマップAチーム"
@@ -345,7 +345,7 @@ export default function TeamEntryPage({
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 border border-gray-700 bg-black px-3 py-2 rounded text-sm"
+                    className="flex-1 border border-gray-700   px-3 py-2 rounded text-sm"
                     placeholder="例: 田中 / tanaka@example.com / 080..."
                   />
                   <button

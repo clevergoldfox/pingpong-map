@@ -201,7 +201,7 @@ export default function TournamentTeamPage({
         <div className="flex flex-wrap items-end gap-2">
           <input
             type="text"
-            className="border border-gray-700 bg-black px-3 py-2 rounded w-48"
+            className="border border-gray-700   px-3 py-2 rounded w-48"
             placeholder="チーム名"
             value={newTeamName}
             onChange={(e) => setNewTeamName(e.target.value)}
@@ -242,7 +242,7 @@ export default function TournamentTeamPage({
                 </ul>
                 <div className="flex items-center gap-2">
                   <select
-                    className="border border-gray-700 bg-black px-2 py-1 rounded text-xs"
+                    className="border border-gray-700   px-2 py-1 rounded text-xs"
                     onChange={(e) => {
                       const uid = e.target.value
                       if (uid) {

@@ -183,7 +183,7 @@ export default function MatchesPage({
                         onChange={(e) =>
                           setReferee(m.id, e.target.value || null)
                         }
-                        className="border border-gray-700 bg-black px-2 py-1 rounded"
+                        className="border border-gray-700   px-2 py-1 rounded"
                         disabled={disabled}
                       >
                         <option value="">審判なし</option>

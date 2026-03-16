@@ -181,7 +181,7 @@ export default function TeamMatchPage({
                       <div key={i} className="flex gap-2 items-center">
                         <input
                           type="number"
-                          className="w-16 border border-gray-700 bg-black px-2 py-1 rounded"
+                          className="w-16 border border-gray-700   px-2 py-1 rounded"
                           placeholder="A"
                           value={row.p1}
                           onChange={(e) => setScoreRow(g.id, i, "p1", e.target.value)}
@@ -189,7 +189,7 @@ export default function TeamMatchPage({
                         <span>-</span>
                         <input
                           type="number"
-                          className="w-16 border border-gray-700 bg-black px-2 py-1 rounded"
+                          className="w-16 border border-gray-700   px-2 py-1 rounded"
                           placeholder="B"
                           value={row.p2}
                           onChange={(e) => setScoreRow(g.id, i, "p2", e.target.value)}
@@ -208,7 +208,7 @@ export default function TeamMatchPage({
                     <div className="mb-2">
                       <label className="text-sm text-gray-400 mr-2">勝者:</label>
                       <select
-                        className="border border-gray-700 bg-black px-2 py-1 rounded text-sm"
+                        className="border border-gray-700   px-2 py-1 rounded text-sm"
                         value={winnerInput[g.id] ?? ""}
                         onChange={(e) => setWinnerInput((prev) => ({ ...prev, [g.id]: e.target.value }))}
                       >
@@ -230,7 +230,7 @@ export default function TeamMatchPage({
                     <div className="mb-2">
                       <label className="text-sm text-gray-400 mr-2">勝者:</label>
                       <select
-                        className="border border-gray-700 bg-black px-2 py-1 rounded text-sm"
+                        className="border border-gray-700   px-2 py-1 rounded text-sm"
                         value={winnerInput[g.id] ?? ""}
                         onChange={(e) => setWinnerInput((prev) => ({ ...prev, [g.id]: e.target.value }))}
                       >

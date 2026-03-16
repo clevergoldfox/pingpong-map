@@ -52,7 +52,7 @@ export default function RegisterPage() {
         <div>
           <label className="block mb-1">ユーザー名</label>
           <input
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -62,7 +62,7 @@ export default function RegisterPage() {
           <label className="block mb-1">メールアドレス</label>
           <input
             type="email"
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -71,7 +71,7 @@ export default function RegisterPage() {
         <div>
           <label className="block mb-1">電話番号</label>
           <input
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required
@@ -80,7 +80,7 @@ export default function RegisterPage() {
         <div>
           <label className="block mb-1">権限</label>
           <select
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             value={role}
             onChange={(e) => setRole(e.target.value as "PLAYER" | "ORGANIZER")}
           >
@@ -92,7 +92,7 @@ export default function RegisterPage() {
           <label className="block mb-1">パスワード</label>
           <input
             type="password"
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <label className="block mb-1">パスワード（確認）</label>
           <input
             type="password"
-            className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+            className="w-full border border-gray-700   px-3 py-2 rounded"
             value={passwordConfirm}
             onChange={(e) => setPasswordConfirm(e.target.value)}
             required
