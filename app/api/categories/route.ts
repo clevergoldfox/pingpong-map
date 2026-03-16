@@ -65,6 +65,7 @@ export async function POST(req: Request) {
   if (isLeague && body.leagueMode != null) createData.leagueMode = body.leagueMode
   if (body.fullLeaguePlayerCount != null) createData.fullLeaguePlayerCount = body.fullLeaguePlayerCount
   if (body.selectLeagueMatchCount != null) createData.selectLeagueMatchCount = body.selectLeagueMatchCount
+  if (body.tablesPerMatch != null) createData.tablesPerMatch = body.tablesPerMatch
   if (body.capacity != null) createData.capacity = body.capacity
   if (body.minEntries != null) createData.minEntries = body.minEntries
   if (

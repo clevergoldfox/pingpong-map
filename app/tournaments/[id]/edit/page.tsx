@@ -12,6 +12,7 @@ type Category = {
   leagueMode: string | null
   fullLeaguePlayerCount: number | null
   selectLeagueMatchCount: number | null
+  tablesPerMatch: number | null
   capacity: number | null
   minEntries: number | null
   courtRange: string | null
@@ -477,9 +478,11 @@ function Step3Categories({
   const [teamSlots, setTeamSlots] = useState<Array<{ order: number; type: "SINGLES" | "DOUBLES" }>>([
     { order: 1, type: "SINGLES" },
   ])
+  const [tablesPerMatch, setTablesPerMatch] = useState(1)
   const [capacity, setCapacity] = useState("")
   const [minEntries, setMinEntries] = useState("")
-  const [courtRange, setCourtRange] = useState("")
+  const [courtStart, setCourtStart] = useState("")
+  const [courtEnd, setCourtEnd] = useState("")
   const [ageRestrictionEnabled, setAgeRestrictionEnabled] = useState(false)
   const [ageMin, setAgeMin] = useState("")
   const [ageMax, setAgeMax] = useState("")
@@ -519,7 +522,24 @@ function Step3Categories({
     setRoundCount(c.roundCount ?? 3)
     setCapacity(c.capacity != null ? String(c.capacity) : "")
     setMinEntries(c.minEntries != null ? String(c.minEntries) : "")
-    setCourtRange(c.courtRange ?? "")
+    if (c.tablesPerMatch != null) {
+      setTablesPerMatch(c.tablesPerMatch || 1)
+    } else {
+      setTablesPerMatch(1)
+    }
+    if (c.courtRange) {
+      const m = String(c.courtRange).match(/(\d+)\D+(\d+)/)
+      if (m) {
+        setCourtStart(m[1] ?? "")
+        setCourtEnd(m[2] ?? "")
+      } else {
+        setCourtStart("")
+        setCourtEnd("")
+      }
+    } else {
+      setCourtStart("")
+      setCourtEnd("")
+    }
     setEntryFeeCard(c.entryFeeCard != null ? String(c.entryFeeCard) : "")
     setEntryFeeCash(c.entryFeeCash != null ? String(c.entryFeeCash) : "")
     const ts = c.teamMatchStructure
@@ -569,6 +589,7 @@ function Step3Categories({
     if (!editingCategoryId) body.tournamentId = tournamentId
     if (isTeam) {
       body.teamMatchStructure = teamSlots.map((s) => ({ order: s.order, type: s.type }))
+      body.tablesPerMatch = tablesPerMatch
     }
     if (isLeague) {
       body.leagueMode = leagueMode
@@ -578,9 +599,19 @@ function Step3Categories({
         body.selectLeagueMatchCount = Math.min(10, Math.max(3, selectLeagueMatchCount))
       }
     }
+    if (courtStart.trim() || courtEnd.trim()) {
+      const start = courtStart.trim() ? parseInt(courtStart, 10) : undefined
+      const end = courtEnd.trim() ? parseInt(courtEnd, 10) : undefined
+      if (start != null && end != null) {
+        body.courtRange = `${start}-${end}`
+      } else if (start != null) {
+        body.courtRange = `${start}`
+      } else if (end != null) {
+        body.courtRange = `${end}`
+      }
+    }
     if (capacity.trim()) body.capacity = parseInt(capacity, 10)
     if (minEntries.trim()) body.minEntries = parseInt(minEntries, 10)
-    if (courtRange.trim()) body.courtRange = courtRange
     if (ageRestrictionEnabled) {
       const min = ageMin.trim() ? parseInt(ageMin, 10) : undefined
       const max = ageMax.trim() ? parseInt(ageMax, 10) : undefined
@@ -733,6 +764,17 @@ function Step3Categories({
               <div className="text-xs text-gray-400">
                 例）1枠目: シングルス、2枠目: ダブルス…のように自由に並べられます。
               </div>
+              <div className="mt-3 space-y-1 text-sm">
+                <label className="block mb-1">1対戦あたりの台数</label>
+                <select
+                  value={tablesPerMatch}
+                  onChange={(e) => setTablesPerMatch(parseInt(e.target.value, 10) || 1)}
+                  className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
+                >
+                  <option value={1}>1台</option>
+                  <option value={2}>2台</option>
+                </select>
+              </div>
             </div>
           )}
           <div>
@@ -861,14 +903,27 @@ function Step3Categories({
             />
           </div>
           <div>
-            <label className="block mb-1">台指定（例: 1〜4コート）</label>
-            <input
-              type="text"
-              value={courtRange}
-              onChange={(e) => setCourtRange(e.target.value)}
-              className="w-full border border-gray-700 bg-black px-3 py-2 rounded"
-              placeholder="1〜4"
-            />
+            <label className="block mb-1">台指定（○〜○）</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                value={courtStart}
+                onChange={(e) => setCourtStart(e.target.value)}
+                className="w-20 border border-gray-700 bg-black px-3 py-2 rounded"
+                placeholder="1"
+              />
+              <span className="text-gray-400">〜</span>
+              <input
+                type="number"
+                min={0}
+                value={courtEnd}
+                onChange={(e) => setCourtEnd(e.target.value)}
+                className="w-20 border border-gray-700 bg-black px-3 py-2 rounded"
+                placeholder="4"
+              />
+              <span className="text-gray-400 text-xs ml-1">コート</span>
+            </div>
           </div>
           <div className="border border-gray-700 rounded p-3 space-y-2">
             <div className="flex items-center gap-2">

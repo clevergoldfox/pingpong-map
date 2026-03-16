@@ -47,6 +47,7 @@ export async function PATCH(
   if (body.leagueMode != null) updateData.leagueMode = body.leagueMode
   if (body.fullLeaguePlayerCount != null) updateData.fullLeaguePlayerCount = body.fullLeaguePlayerCount
   if (body.selectLeagueMatchCount != null) updateData.selectLeagueMatchCount = body.selectLeagueMatchCount
+  if (body.tablesPerMatch != null) (updateData as any).tablesPerMatch = body.tablesPerMatch
   if (body.capacity != null) updateData.capacity = body.capacity
   if (body.minEntries != null) updateData.minEntries = body.minEntries
   if (body.courtRange !== undefined) updateData.courtRange = body.courtRange || null

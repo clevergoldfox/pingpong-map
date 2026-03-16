@@ -90,6 +90,7 @@ model Category {
   leagueMode             LeagueMode?
   fullLeaguePlayerCount  Int?    // 3〜7（フル時）
   selectLeagueMatchCount Int?    // 3〜10（セレクト時）
+  tablesPerMatch         Int?    // 団体戦: 1対戦あたりの台数（1 or 2）
   capacity               Int?
   minEntries             Int?
   courtRange             String?
