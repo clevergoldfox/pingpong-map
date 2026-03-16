@@ -216,6 +216,14 @@ export default function RegisterPlayerPage({
                     <span className="text-gray-400">({c.gender})</span>
                   )}
                   <span className="text-gray-300">参加費: {fee}</span>
+                  {c.type === "TEAM" && (
+                    <Link
+                      href={`/tournaments/${tournamentId}/team-entry/${c.id}`}
+                      className="ml-auto text-xs border border-blue-500 text-blue-300 px-2 py-1 rounded hover:bg-blue-900/30"
+                    >
+                      団体戦に申込み
+                    </Link>
+                  )}
                 </li>
               )
             })}
