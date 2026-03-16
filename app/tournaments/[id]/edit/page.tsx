@@ -261,14 +261,27 @@ function Step2TournamentDetails({
   const [form, setForm] = useState({
     name: tournament.name,
     location: tournament.location,
-    startDate: tournament.startDate?.slice(0, 16) || "",
+    // 開催日: 日付のみ（YYYY-MM-DD）
+    startDate: tournament.startDate?.slice(0, 10) || "",
     mapUrl: tournament.mapUrl || "",
-    openAt: tournament.openAt ? (tournament.openAt.slice(0, 16) || asDateOnly(tournament.openAt) + "T09:00") : "",
+    // 開場時間: 時間のみ（HH:MM）
+    openAt: tournament.openAt ? (() => {
+      const d = new Date(tournament.openAt)
+      if (Number.isNaN(d.getTime())) return ""
+      const hh = String(d.getHours()).padStart(2, "0")
+      const min = String(d.getMinutes()).padStart(2, "0")
+      return `${hh}:${min}`
+    })() : "",
+    // 申込み締切日時: datetime-local 形式（既存値のまま）
     entryDeadlineAt: tournament.entryDeadlineAt ? (tournament.entryDeadlineAt.slice(0, 16) || asDateOnly(tournament.entryDeadlineAt) + "T23:59") : "",
-    cancelPolicy: tournament.cancelPolicy || "",
+    cancelPolicy:
+      tournament.cancelPolicy ||
+      "大会○日前以降のキャンセルは、参加費の100%をキャンセル料として頂戴します。\n※無断キャンセルの場合は参加費100％を請求いたします。\nまた、今後の大会参加をお断りする場合がございますのでご注意ください。",
     organizer: tournament.organizer || "",
     sponsor: tournament.sponsor || "",
-    description: tournament.description || "",
+    description:
+      tournament.description ||
+      "【参加資格】\nどなたでもご参加いただけます。\n\n【種目】\n混成団体\n\n【ルール】\n①W ②S ③S の2点先取（1チーム3〜4人）の団体戦。\n○〜○チームでリーグ戦を行います。\n※1番（ダブルス）に出た選手は2番(シングルス)には出場できません。\n※女子のみ、男子のみのチームも参加可能です。\n\n【表彰】\n各グループ優勝チーム\n\n【その他】\nNittaku プラ 3スタープレミアム",
   })
 
   useEffect(() => {
@@ -276,14 +289,26 @@ function Step2TournamentDetails({
       ...prev,
       name: tournament.name,
       location: tournament.location,
-      startDate: tournament.startDate?.slice(0, 16) || "",
+      startDate: tournament.startDate?.slice(0, 10) || "",
       mapUrl: tournament.mapUrl || "",
-      openAt: tournament.openAt ? (tournament.openAt.slice(0, 16) || asDateOnly(tournament.openAt) + "T09:00") : "",
+      openAt: tournament.openAt ? (() => {
+        const d = new Date(tournament.openAt)
+        if (Number.isNaN(d.getTime())) return ""
+        const hh = String(d.getHours()).padStart(2, "0")
+        const min = String(d.getMinutes()).padStart(2, "0")
+        return `${hh}:${min}`
+      })() : "",
       entryDeadlineAt: tournament.entryDeadlineAt ? (tournament.entryDeadlineAt.slice(0, 16) || asDateOnly(tournament.entryDeadlineAt) + "T23:59") : "",
-      cancelPolicy: tournament.cancelPolicy || "",
+      cancelPolicy:
+        tournament.cancelPolicy ||
+        prev.cancelPolicy ||
+        "大会○日前以降のキャンセルは、参加費の100%をキャンセル料として頂戴します。\n※無断キャンセルの場合は参加費100％を請求いたします。\nまた、今後の大会参加をお断りする場合がございますのでご注意ください。",
       organizer: tournament.organizer || prev.organizer,
       sponsor: tournament.sponsor || "",
-      description: tournament.description || "",
+      description:
+        tournament.description ||
+        prev.description ||
+        "【参加資格】\nどなたでもご参加いただけます。\n\n【種目】\n混成団体\n\n【ルール】\n①W ②S ③S の2点先取（1チーム3〜4人）の団体戦。\n○〜○チームでリーグ戦を行います。\n※1番（ダブルス）に出た選手は2番(シングルス)には出場できません。\n※女子のみ、男子のみのチームも参加可能です。\n\n【表彰】\n各グループ優勝チーム\n\n【その他】\nNittaku プラ 3スタープレミアム",
     }))
   }, [tournament.id, tournament.name, tournament.location, tournament.startDate, tournament.mapUrl, tournament.openAt, tournament.entryDeadlineAt, tournament.cancelPolicy, tournament.organizer, tournament.sponsor, tournament.description])
 
@@ -313,9 +338,13 @@ function Step2TournamentDetails({
           body: JSON.stringify({
             name: form.name,
             location: form.location,
-            startDate: form.startDate || undefined,
+            // 開催日: 日付のみをISOへ
+            startDate: form.startDate ? dateOnlyToIsoStart(form.startDate) : undefined,
             mapUrl: form.mapUrl || null,
-            openAt: datetimeLocalToIso(form.openAt),
+            // 開場時間: 時刻のみを仮の日付と合わせて保存（ここでは 1970-01-01）
+            openAt: form.openAt
+              ? `${"1970-01-01"}T${form.openAt.length === 5 ? `${form.openAt}:00` : form.openAt}`
+              : null,
             entryDeadlineAt: datetimeLocalToIso(form.entryDeadlineAt),
             cancelPolicy: form.cancelPolicy || null,
             organizer: form.organizer || null,
@@ -351,7 +380,7 @@ function Step2TournamentDetails({
         <div>
           <label className="block mb-1">開催日 *</label>
           <input
-            type="datetime-local"
+            type="date"
             value={form.startDate}
             onChange={(e) =>
               setForm((f) => ({ ...f, startDate: e.target.value }))
@@ -384,7 +413,7 @@ function Step2TournamentDetails({
           <label className="block mb-1">開場時間</label>
           <input
             id="openAt"
-            type="datetime-local"
+            type="time"
             value={form.openAt}
             onChange={(e) =>
               setForm((f) => ({ ...f, openAt: e.target.value }))
@@ -393,7 +422,7 @@ function Step2TournamentDetails({
           />
         </div>
         <div>
-          <label className="block mb-1">申込み締切日</label>
+          <label className="block mb-1">申込み締切日時</label>
           <input
             id="entryDeadlineAt"
             type="datetime-local"
