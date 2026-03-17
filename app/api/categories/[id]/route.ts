@@ -51,6 +51,8 @@ export async function PATCH(
   if (body.capacity != null) updateData.capacity = body.capacity
   if (body.minEntries != null) updateData.minEntries = body.minEntries
   if (body.courtRange !== undefined) updateData.courtRange = body.courtRange || null
+  if (body.timeSlotStart !== undefined) updateData.timeSlotStart = body.timeSlotStart || null
+  if (body.timeSlotEnd !== undefined) updateData.timeSlotEnd = body.timeSlotEnd || null
   if (body.ageRestriction !== undefined) updateData.ageRestriction = body.ageRestriction
   if (body.ratingRestriction !== undefined) updateData.ratingRestriction = body.ratingRestriction
   if (body.entryFeeCard !== undefined) {

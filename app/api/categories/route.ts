@@ -79,6 +79,8 @@ export async function POST(req: Request) {
     )
   }
   if (body.courtRange != null) createData.courtRange = body.courtRange
+  if (body.timeSlotStart != null) createData.timeSlotStart = body.timeSlotStart
+  if (body.timeSlotEnd != null) createData.timeSlotEnd = body.timeSlotEnd
   if (body.ageRestriction != null) createData.ageRestriction = body.ageRestriction
   if (body.ratingRestriction != null) createData.ratingRestriction = body.ratingRestriction
   if (body.entryFeeCard != null) createData.entryFeeCard = body.entryFeeCard

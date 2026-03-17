@@ -63,6 +63,7 @@ model Tournament {
   categories   Category[]
   participants TournamentParticipant[]
   matches      Match[]
+  teamEntries  TeamEntry[]
 }
 
 enum TournamentStatus {
@@ -98,6 +99,8 @@ model Category {
   capacity               Int?
   minEntries             Int?
   courtRange             String?
+  timeSlotStart          String?   // 種目開始時刻 HH:MM（同一台・同一ユーザー重複防止用）
+  timeSlotEnd             String?   // 種目終了時刻 HH:MM
   ageRestriction         Json?
   ratingRestriction      Json?
   refereeRequired        Boolean @default(false)

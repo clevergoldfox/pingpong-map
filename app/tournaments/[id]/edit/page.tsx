@@ -16,6 +16,8 @@ type Category = {
   capacity: number | null
   minEntries: number | null
   courtRange: string | null
+  timeSlotStart: string | null
+  timeSlotEnd: string | null
   refereeRequired: boolean
   entryFeeCard: number | null
   entryFeeCash: number | null
@@ -512,6 +514,8 @@ function Step3Categories({
   const [minEntries, setMinEntries] = useState("")
   const [courtStart, setCourtStart] = useState("")
   const [courtEnd, setCourtEnd] = useState("")
+  const [timeSlotStart, setTimeSlotStart] = useState("")
+  const [timeSlotEnd, setTimeSlotEnd] = useState("")
   const [ageRestrictionEnabled, setAgeRestrictionEnabled] = useState(false)
   const [ageMin, setAgeMin] = useState("")
   const [ageMax, setAgeMax] = useState("")
@@ -569,6 +573,8 @@ function Step3Categories({
       setCourtStart("")
       setCourtEnd("")
     }
+    setTimeSlotStart(c.timeSlotStart ?? "")
+    setTimeSlotEnd(c.timeSlotEnd ?? "")
     setEntryFeeCard(c.entryFeeCard != null ? String(c.entryFeeCard) : "")
     setEntryFeeCash(c.entryFeeCash != null ? String(c.entryFeeCash) : "")
     const ts = c.teamMatchStructure
@@ -639,6 +645,8 @@ function Step3Categories({
         body.courtRange = `${end}`
       }
     }
+    if (timeSlotStart.trim()) body.timeSlotStart = timeSlotStart.trim()
+    if (timeSlotEnd.trim()) body.timeSlotEnd = timeSlotEnd.trim()
     if (capacity.trim()) body.capacity = parseInt(capacity, 10)
     if (minEntries.trim()) body.minEntries = parseInt(minEntries, 10)
     if (ageRestrictionEnabled) {
@@ -952,6 +960,29 @@ function Step3Categories({
                 placeholder="4"
               />
               <span className="text-gray-400 text-xs ml-1">コート</span>
+            </div>
+          </div>
+          <div>
+            <label className="block mb-1">時間</label>
+            <p className="text-xs text-gray-400 mb-1">
+              同一時間帯の同じ台の使用や、同じユーザーの重複参加を防ぐために使用します。
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-400 text-sm">開始</span>
+              <input
+                type="time"
+                value={timeSlotStart}
+                onChange={(e) => setTimeSlotStart(e.target.value)}
+                className="border border-gray-700 bg-black px-3 py-2 rounded"
+              />
+              <span className="text-gray-400">〜</span>
+              <span className="text-gray-400 text-sm">終了</span>
+              <input
+                type="time"
+                value={timeSlotEnd}
+                onChange={(e) => setTimeSlotEnd(e.target.value)}
+                className="border border-gray-700 bg-black px-3 py-2 rounded"
+              />
             </div>
           </div>
           <div className="border border-gray-700 rounded p-3 space-y-2">
