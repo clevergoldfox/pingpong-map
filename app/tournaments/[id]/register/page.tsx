@@ -301,7 +301,7 @@ export default function RegisterPlayerPage({
             ) : (
               <table className="w-full border border-gray-700 text-sm">
                 <thead>
-                  <tr className="bg-gray-900">
+                  <tr className="">
                     <th className="px-3 py-2 text-left">プレイヤー</th>
                     <th className="px-3 py-2 text-left">参加ステータス</th>
                     <th className="px-3 py-2 text-left">チェックイン</th>

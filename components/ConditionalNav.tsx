@@ -18,6 +18,9 @@ export function ConditionalNav() {
       <Link href="/tournaments" className="hover:text-blue-400">
         大会一覧
       </Link>
+      <Link href="/me" className="hover:text-blue-400">
+        マイページ
+      </Link>
       <Link href="/players" className="hover:text-blue-400">
         プレイヤー一覧
       </Link>

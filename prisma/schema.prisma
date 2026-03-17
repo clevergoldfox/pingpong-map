@@ -19,6 +19,9 @@ model User {
   email     String   @unique
   phone     String   @unique
   passwordHash String
+  avatarUrl String?
+  playStyle PlayStyle?
+  affiliation String?
   rating    Int      @default(500)
   seasonRating  Int      @default(500)  // current season rating
   tier         Tier @default(BRONZE)
@@ -35,6 +38,14 @@ model User {
   representedTeamEntries TeamEntry[] @relation("TeamEntryRepresentative")
   teamEntryMembers TeamEntryMember[]
   @@index([rating])
+}
+
+enum PlayStyle {
+  SHAKE_ATTACK
+  PEN_ATTACK
+  CUTTER
+  BLOCKER
+  OTHER
 }
 
 enum Role {
