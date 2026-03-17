@@ -62,53 +62,60 @@ export default async function TournamentPage(
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-
-                <Link href={`/tournaments/${id}/register`} className="border p-4">
-                    参加者登録
-                </Link>
-
-                <Link href={`/tournaments/${id}/checkin`} className="border p-4">
-                    プレイヤーチェックイン
-                </Link>
-
-                <Link href={`/tournaments/${id}/matches`} className="border p-4">
-                    試合一覧
-                </Link>
-
-                <Link href={`/tournaments/${id}/standings`} className="border p-4">
-                    順位表
-                </Link>
-
-                {isOrganizerOrAdmin && (
-                    <Link href={`/tournaments/${id}/categories`} className="border p-4">
-                        カテゴリ・ラウンド管理
-                    </Link>
-                )}
-
-            </div>
-
-            {/* 種目・参加費 */}
+            {/* 種目一覧：出たい種目をクリック */}
             {tournament.categories?.length > 0 && (
                 <section>
-                    <h2 className="text-xl mb-3">種目・参加費</h2>
-                    <ul className="space-y-2 text-sm">
+                    <h2 className="text-xl font-semibold mb-2">種目一覧</h2>
+                    <p className="text-sm text-gray-400 mb-3">出たい種目をクリックして申し込みください</p>
+                    <ul className="grid gap-3 sm:grid-cols-2">
                         {tournament.categories.map((c: any) => {
                             const card = c.entryFeeCard != null ? `カード ¥${c.entryFeeCard}` : null
                             const cash = c.entryFeeCash != null ? `当日 ¥${c.entryFeeCash}` : null
                             const fee = [card, cash].filter(Boolean).join(" / ") || "—"
+                            const genderLabel = { MALE: "男子", FEMALE: "女子", MIXED: "混成", MIX: "ミックス" }[String(c.gender ?? "")] ?? c.gender ?? ""
+                            const typeLabel = { SINGLES: "シングルス", DOUBLES: "ダブルス", TEAM: "団体" }[String(c.type ?? "")] ?? c.type
+                            const categoryName = `${genderLabel}${typeLabel}`.trim() || `${c.type}`
                             return (
-                                <li key={c.id} className="flex flex-wrap items-center gap-2 border border-gray-700 rounded px-3 py-2">
-                                    <span className="font-medium">{c.type}</span>
-                                    <span className="text-gray-400">{c.format}</span>
-                                    {c.gender && <span className="text-gray-400">({c.gender})</span>}
-                                    <span className="text-gray-300">参加費: {fee}</span>
+                                <li key={c.id}>
+                                    <Link
+                                        href={`/tournaments/${id}/entry/${c.id}`}
+                                        className="block border border-gray-700 rounded-lg p-4 hover:bg-gray-800/50 transition-colors"
+                                    >
+                                        <span className="font-semibold">{categoryName}</span>
+                                        <span className="text-gray-400 text-sm ml-2">{c.format}</span>
+                                        <div className="text-sm text-gray-300 mt-1">参加費: {fee}</div>
+                                    </Link>
                                 </li>
                             )
                         })}
                     </ul>
                 </section>
             )}
+
+            <section>
+                <h2 className="text-xl font-semibold mb-2">その他</h2>
+                <div className="grid grid-cols-2 gap-3">
+                    <Link href={`/tournaments/${id}/register`} className="border border-gray-700 rounded-lg p-3 text-sm hover:bg-gray-800/50">
+                        参加者登録・チェックイン
+                    </Link>
+                    <Link href={`/tournaments/${id}/matches`} className="border border-gray-700 rounded-lg p-3 text-sm hover:bg-gray-800/50">
+                        試合一覧
+                    </Link>
+                    <Link href={`/tournaments/${id}/standings`} className="border border-gray-700 rounded-lg p-3 text-sm hover:bg-gray-800/50">
+                        順位表
+                    </Link>
+                    {isOrganizerOrAdmin && (
+                        <>
+                            <Link href={`/tournaments/${id}/checkin`} className="border border-gray-700 rounded-lg p-3 text-sm hover:bg-gray-800/50">
+                                プレイヤーチェックイン
+                            </Link>
+                            <Link href={`/tournaments/${id}/categories`} className="border border-gray-700 rounded-lg p-3 text-sm hover:bg-gray-800/50">
+                                カテゴリ・ラウンド管理
+                            </Link>
+                        </>
+                    )}
+                </div>
+            </section>
 
             {/* Standings */}
 
