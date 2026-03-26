@@ -31,18 +31,13 @@ export async function POST(
     return NextResponse.json({ error: "Cannot invite on non-pending entry" }, { status: 400 })
   }
 
-  // 招待対象も大会参加者（PAID）である必要あり
-  const participant = await prisma.tournamentParticipant.findUnique({
-    where: {
-      tournamentId_userId: {
-        tournamentId: entry.tournamentId,
-        userId,
-      },
-    },
+  const invitedUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
   })
-  if (!participant || participant.joinStatus !== "PAID") {
+  if (!invitedUser) {
     return NextResponse.json(
-      { error: "大会参加済み（支払い完了）のユーザーのみメンバーに追加できます" },
+      { error: "招待対象ユーザーが見つかりません" },
       { status: 400 }
     )
   }

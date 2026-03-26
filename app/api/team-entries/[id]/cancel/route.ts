@@ -14,6 +14,7 @@ export async function POST(
 
   const entry = await prisma.teamEntry.findUnique({
     where: { id },
+    include: { members: true },
   })
   if (!entry) {
     return NextResponse.json({ error: "TeamEntry not found" }, { status: 404 })
@@ -30,6 +31,18 @@ export async function POST(
     data: {
       status: "CANCELED",
       canceledAt: new Date(),
+    },
+  })
+
+  const relatedUserIds = [entry.representativeUserId, ...entry.members.map((m) => m.userId)]
+  await prisma.tournamentParticipant.updateMany({
+    where: {
+      tournamentId: entry.tournamentId,
+      userId: { in: relatedUserIds },
+      joinStatus: { in: ["PENDING_PARTNER", "PENDING_PAYMENT"] },
+    },
+    data: {
+      joinStatus: "APPLIED",
     },
   })
 

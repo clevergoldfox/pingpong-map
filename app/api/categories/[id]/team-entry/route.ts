@@ -51,15 +51,15 @@ export async function POST(
     where: { id: categoryId },
     include: { tournament: true },
   })
-  if (!category || category.type !== "TEAM") {
+  if (!category || !["TEAM", "DOUBLES"].includes(category.type)) {
     return NextResponse.json(
-      { error: "TEAM category not found" },
+      { error: "TEAM/DOUBLES category not found" },
       { status: 404 }
     )
   }
 
-  // 代表者は大会参加者（PAID）である必要あり
-  const participant = await prisma.tournamentParticipant.findUnique({
+  // 代表者を大会参加者として確保（団体戦は支払い前にメンバー調整する）
+  const existingParticipant = await prisma.tournamentParticipant.findUnique({
     where: {
       tournamentId_userId: {
         tournamentId: category.tournamentId,
@@ -67,12 +67,30 @@ export async function POST(
       },
     },
   })
-  if (!participant || participant.joinStatus !== "PAID") {
+  if (existingParticipant && ["CANCELED", "FORFEITED"].includes(existingParticipant.joinStatus)) {
     return NextResponse.json(
-      { error: "大会の有効な参加者のみ団体戦に申込みできます" },
+      { error: "大会参加状態が無効のため団体戦に申込みできません" },
       { status: 400 }
     )
   }
+  await prisma.tournamentParticipant.upsert({
+    where: {
+      tournamentId_userId: {
+        tournamentId: category.tournamentId,
+        userId: user.id,
+      },
+    },
+    update: {
+      joinStatus:
+        existingParticipant?.joinStatus === "PAID" ? "PAID" : "PENDING_PARTNER",
+      canceledAt: null,
+    },
+    create: {
+      tournamentId: category.tournamentId,
+      userId: user.id,
+      joinStatus: "PENDING_PARTNER",
+    },
+  })
 
   // 既にこのカテゴリで代表もしくはメンバーになっていないか
   const existing = await prisma.teamEntry.findFirst({
@@ -86,7 +104,7 @@ export async function POST(
   })
   if (existing) {
     return NextResponse.json(
-      { error: "この種目では既に団体チームに所属しています" },
+      { error: "この種目では既にエントリー済みです" },
       { status: 400 }
     )
   }

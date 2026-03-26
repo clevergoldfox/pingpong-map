@@ -97,12 +97,19 @@ export default function TeamEntryPage({
   }, [tournamentId, categoryId])
 
   const isRepresentative = me && entry && entry.representativeUserId === me.id
+  const isDoubles = category?.type === "DOUBLES"
+  const pageTitle = isDoubles ? "ダブルスエントリー" : "団体戦エントリー"
+  const entryLabel = isDoubles ? "ペア" : "チーム"
+  const memberLabel = isDoubles ? "パートナー" : "メンバー"
+  const createMessage = isDoubles ? "ダブルスの申込みを作成しました" : "団体戦の申込みを作成しました"
+  const confirmMessage = isDoubles ? "ダブルスエントリーを確定しました" : "団体戦エントリーを確定しました"
+  const cancelMessage = isDoubles ? "ダブルスエントリーを取消しました" : "団体戦エントリーを取消しました"
 
   const handleCreateEntry = async () => {
     if (!me) return
     const name = teamName.trim()
     if (!name) {
-      setError("チーム名を入力してください")
+      setError(`${entryLabel}名を入力してください`)
       return
     }
     setWorking(true)
@@ -116,7 +123,7 @@ export default function TeamEntryPage({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? "申込みの作成に失敗しました")
-      setMessage("団体戦の申込みを作成しました")
+      setMessage(createMessage)
       await load()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "申込みの作成に失敗しました")
@@ -158,7 +165,7 @@ export default function TeamEntryPage({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? "招待に失敗しました")
-      setMessage("メンバーを招待しました")
+      setMessage(`${memberLabel}を招待しました`)
       await load()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "招待に失敗しました")
@@ -178,7 +185,7 @@ export default function TeamEntryPage({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? "確定に失敗しました")
-      setMessage("団体戦エントリーを確定しました")
+      setMessage(confirmMessage)
       await load()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "確定に失敗しました")
@@ -198,7 +205,7 @@ export default function TeamEntryPage({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? "取消に失敗しました")
-      setMessage("団体戦エントリーを取消しました")
+      setMessage(cancelMessage)
       await load()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "取消に失敗しました")
@@ -215,7 +222,7 @@ export default function TeamEntryPage({
     return (
       <div className="p-4 space-y-2">
         <p className="text-sm text-gray-400">
-          団体戦の申込みにはログインが必要です。
+          {isDoubles ? "ダブルス" : "団体戦"}の申込みにはログインが必要です。
         </p>
         <Link href="/auth/login" className="text-blue-400 hover:underline text-sm">
           ログインページへ
@@ -228,7 +235,7 @@ export default function TeamEntryPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">団体戦エントリー</h1>
+          <h1 className="text-2xl font-semibold">{pageTitle}</h1>
           {category && (
             <p className="text-sm text-gray-400 mt-1">
               種目: {category.gender ?? ""} {category.type}
@@ -248,18 +255,15 @@ export default function TeamEntryPage({
 
       {!entry ? (
         <section className="border border-gray-700 rounded p-4 space-y-3 max-w-xl text-sm">
-          <h2 className="font-semibold text-base mb-1">1. チーム申込みを作成</h2>
-          <p className="text-gray-400 text-xs mb-2">
-            代表者としてチーム名を入力し、団体戦への申込みを作成します。
-          </p>
+          <h2 className="font-semibold text-base mb-1">1. {entryLabel}申込みを作成</h2>
           <div className="space-y-2">
-            <label className="block text-xs text-gray-300 mb-1">チーム名</label>
+            <label className="block text-xs text-gray-300 mb-1">{entryLabel}名</label>
             <input
               type="text"
               className="w-full border border-gray-700   px-3 py-2 rounded"
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
-              placeholder="例: ピンポンマップAチーム"
+              placeholder={isDoubles ? "例: しぶやダブルス" : "例: ピンポンマップAチーム"}
             />
           </div>
           <button
@@ -268,16 +272,16 @@ export default function TeamEntryPage({
             disabled={working}
             className="mt-3 border border-blue-600 text-blue-300 px-4 py-2 rounded hover:bg-blue-900/30 disabled:opacity-50"
           >
-            {working ? "作成中..." : "団体戦に申込み"}
+            {working ? "作成中..." : `${isDoubles ? "ダブルス" : "団体戦"}に申込み`}
           </button>
         </section>
       ) : (
         <section className="border border-gray-700 rounded p-4 space-y-4 max-w-2xl text-sm">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h2 className="font-semibold text-base">あなたのチーム</h2>
+              <h2 className="font-semibold text-base">あなたの{entryLabel}</h2>
               <p className="text-gray-300 mt-1">
-                チーム名: <span className="font-medium">{entry.teamName}</span>
+                {entryLabel}名: <span className="font-medium">{entry.teamName}</span>
               </p>
               <p className="text-gray-400 text-xs mt-0.5">
                 ステータス: {entry.status === "PENDING" ? "申請中" : entry.status === "CONFIRMED" ? "確定" : "取消済み"}
@@ -307,10 +311,10 @@ export default function TeamEntryPage({
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <h3 className="font-semibold text-sm">メンバー一覧</h3>
+                <h3 className="font-semibold text-sm">{isDoubles ? "ペア一覧" : "メンバー一覧"}</h3>
               <ul className="border border-gray-700 rounded divide-y divide-gray-800">
                 <li className="px-3 py-2 flex items-center justify-between">
-                  <span>{me.name}（代表者）</span>
+                  <span>{me.name}{isDoubles ? "" : "（代表者）"}</span>
                   <span className="text-xs text-gray-400">APPROVED</span>
                 </li>
                 {entry.members.map((m) => (
@@ -327,7 +331,7 @@ export default function TeamEntryPage({
                 ))}
                 {entry.members.length === 0 && (
                   <li className="px-3 py-2 text-xs text-gray-500">
-                    まだメンバーがいません。右側から招待してください。
+                    まだ{memberLabel}がいません。
                   </li>
                 )}
               </ul>
@@ -335,11 +339,7 @@ export default function TeamEntryPage({
 
             {isRepresentative && entry.status === "PENDING" && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-sm">メンバーを招待</h3>
-                <p className="text-xs text-gray-400">
-                  名前・メールアドレス・電話番号で検索し、メンバー候補を追加できます。
-                  招待には大会への参加登録（支払い完了）が必要です。
-                </p>
+                <h3 className="font-semibold text-sm">{memberLabel}を招待</h3>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -359,9 +359,7 @@ export default function TeamEntryPage({
                 </div>
                 <ul className="border border-gray-700 rounded divide-y divide-gray-800 max-h-64 overflow-auto text-sm">
                   {searchResults.length === 0 ? (
-                    <li className="px-3 py-2 text-xs text-gray-500">
-                      検索結果がここに表示されます。
-                    </li>
+                    <li className="px-3 py-2 text-xs text-gray-500">検索してください。</li>
                   ) : (
                     searchResults.map((u) => (
                       <li key={u.id} className="px-3 py-2 flex items-center justify-between gap-2">

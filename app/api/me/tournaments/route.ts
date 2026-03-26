@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/current-user"
 
 const JOIN_STATUS_LABEL: Record<string, string> = {
   APPLIED: "申込中",
+  PENDING_PARTNER: "パートナー待ち",
+  PENDING_PAYMENT: "決済待ち",
   PAID: "確定",
   CANCELED: "キャンセル",
   FORFEITED: "棄権",

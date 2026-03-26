@@ -39,8 +39,11 @@ export async function POST(
 
   const p = await prisma.tournamentParticipant.upsert({
     where: { tournamentId_userId: { tournamentId, userId } },
-    update: { joinStatus: "PAID" },
-    create: { tournamentId, userId, joinStatus: "PAID" },
+    update: {
+      joinStatus: "APPLIED",
+      canceledAt: null,
+    },
+    create: { tournamentId, userId, joinStatus: "APPLIED" },
   })
 
   return NextResponse.json(p)

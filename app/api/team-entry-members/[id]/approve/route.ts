@@ -58,6 +58,33 @@ export async function POST(
     },
   })
 
+  const meParticipant = await prisma.tournamentParticipant.findUnique({
+    where: {
+      tournamentId_userId: {
+        tournamentId: entry.tournamentId,
+        userId: user.id,
+      },
+    },
+  })
+
+  await prisma.tournamentParticipant.upsert({
+    where: {
+      tournamentId_userId: {
+        tournamentId: entry.tournamentId,
+        userId: user.id,
+      },
+    },
+    update: {
+      joinStatus: meParticipant?.joinStatus === "PAID" ? "PAID" : "PENDING_PARTNER",
+      canceledAt: null,
+    },
+    create: {
+      tournamentId: entry.tournamentId,
+      userId: user.id,
+      joinStatus: "PENDING_PARTNER",
+    },
+  })
+
   return NextResponse.json(updated)
 }
 

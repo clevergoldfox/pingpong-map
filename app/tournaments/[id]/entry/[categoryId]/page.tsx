@@ -26,6 +26,7 @@ type Tournament = {
 }
 
 type MeUser = { id: string; name: string }
+type Participant = { userId: string; joinStatus: string }
 
 const GENDER_LABEL: Record<string, string> = {
   MALE: "男子",
@@ -58,7 +59,7 @@ export default function CategoryEntryPage({
   const [working, setWorking] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [alreadyJoined, setAlreadyJoined] = useState(false)
+  const [myJoinStatus, setMyJoinStatus] = useState<string | null>(null)
   const base = getBaseUrl()
 
   useEffect(() => {
@@ -91,11 +92,10 @@ export default function CategoryEntryPage({
         }
         const partData = partRes.ok ? await partRes.json() : []
         if (meData?.user?.id && Array.isArray(partData)) {
-          const joined = partData.some(
-            (p: { userId: string; joinStatus: string }) =>
-              p.userId === meData!.user!.id && p.joinStatus !== "CANCELED"
-          )
-          setAlreadyJoined(!!joined)
+          const mine = partData.find(
+            (p: Participant) => p.userId === meData!.user!.id
+          ) as Participant | undefined
+          setMyJoinStatus(mine?.joinStatus ?? null)
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "読み込みに失敗しました")
@@ -120,10 +120,54 @@ export default function CategoryEntryPage({
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data?.error ?? "申込みに失敗しました")
-      setMessage("申込みを受け付けました。決済は別途ご案内します。")
-      setAlreadyJoined(true)
+      setMessage("申込みを受け付けました。")
+      setMyJoinStatus("APPLIED")
     } catch (e) {
       setError(e instanceof Error ? e.message : "申込みに失敗しました")
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  const handleStartPayment = async () => {
+    if (!me) return
+    setWorking(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await fetch(`${base}/api/tournaments/${tournamentId}/payment/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: me.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? "決済の開始に失敗しました")
+      setMyJoinStatus("PENDING_PAYMENT")
+      setMessage("決済手続きを開始しました。")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "決済の開始に失敗しました")
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  const handleCompletePayment = async () => {
+    if (!me) return
+    setWorking(true)
+    setError(null)
+    setMessage(null)
+    try {
+      const res = await fetch(`${base}/api/tournaments/${tournamentId}/payment/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: me.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error ?? "決済の完了に失敗しました")
+      setMyJoinStatus("PAID")
+      setMessage("申込みが確定しました。")
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "決済の完了に失敗しました")
     } finally {
       setWorking(false)
     }
@@ -153,6 +197,13 @@ export default function CategoryEntryPage({
   const isSingles = category.type === "SINGLES"
   const isDoubles = category.type === "DOUBLES"
   const isTeam = category.type === "TEAM"
+  const statusLabel: Record<string, string> = {
+    APPLIED: "申込中",
+    PENDING_PARTNER: "パートナー待ち",
+    PENDING_PAYMENT: "決済待ち",
+    PAID: "確定",
+    CANCELED: "キャンセル",
+  }
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -219,50 +270,54 @@ export default function CategoryEntryPage({
           </div>
         ) : isSingles ? (
           <div>
-            {alreadyJoined ? (
-              <p className="text-gray-300 text-sm">
-                この大会にはすでに参加登録済みです。決済は別途ご案内します。
-              </p>
+            {myJoinStatus === "PAID" ? (
+              <p className="text-green-400 text-sm">申込みは確定済みです。</p>
+            ) : myJoinStatus === "PENDING_PAYMENT" ? (
+              <button
+                type="button"
+                onClick={handleCompletePayment}
+                disabled={working}
+                className="border border-green-600 text-green-300 px-4 py-2 rounded hover:bg-green-900/30 disabled:opacity-50"
+              >
+                {working ? "処理中..." : "決済を完了する"}
+              </button>
+            ) : myJoinStatus === "APPLIED" ? (
+              <button
+                type="button"
+                onClick={handleStartPayment}
+                disabled={working}
+                className="border border-blue-600 text-blue-300 px-4 py-2 rounded hover:bg-blue-900/30 disabled:opacity-50"
+              >
+                {working ? "処理中..." : "決済に進む"}
+              </button>
             ) : (
-              <>
-                <p className="text-sm text-gray-400 mb-3">
-                  この種目に申し込むと、大会への参加登録が行われます。
-                </p>
-                <button
-                  type="button"
-                  onClick={handleSinglesApply}
-                  disabled={working}
-                  className="border border-green-600 text-green-300 px-4 py-2 rounded hover:bg-green-900/30 disabled:opacity-50"
-                >
-                  {working ? "送信中..." : "この種目に申し込む"}
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={handleSinglesApply}
+                disabled={working}
+                className="border border-green-600 text-green-300 px-4 py-2 rounded hover:bg-green-900/30 disabled:opacity-50"
+              >
+                {working ? "送信中..." : "この種目に申し込む"}
+              </button>
+            )}
+            {myJoinStatus && myJoinStatus !== "PAID" && (
+              <p className="text-xs text-gray-400 mt-3">現在の状態: {statusLabel[myJoinStatus] ?? myJoinStatus}</p>
             )}
           </div>
         ) : isTeam ? (
           <div>
-            <p className="text-sm text-gray-400 mb-3">
-              団体戦は代表者がチーム名を入力し、メンバーを招待・承認してから申込みを確定します。
-            </p>
             <Link
               href={`/tournaments/${tournamentId}/team-entry/${categoryId}`}
               className="inline-block border border-blue-600 text-blue-300 px-4 py-2 rounded hover:bg-blue-900/30"
             >
-              団体戦の申込み（メンバー紐付け）へ
+              メンバーを紐付けて申し込む
             </Link>
           </div>
         ) : isDoubles ? (
           <div>
-            <p className="text-sm text-gray-400 mb-3">
-              ダブルスはパートナーを1名紐付けてから申し込みます。現在準備中です。
-            </p>
-            <p className="text-sm text-gray-500">
-              しばらくのあいだは、
-              <Link href={`/tournaments/${tournamentId}/register`} className="text-blue-400 hover:underline ml-1">
-                参加者登録
-              </Link>
-              からお申し込みください。
-            </p>
+            <Link href={`/tournaments/${tournamentId}/team-entry/${categoryId}`} className="inline-block border border-blue-600 text-blue-300 px-4 py-2 rounded hover:bg-blue-900/30">
+              パートナーを紐付けて申し込む
+            </Link>
           </div>
         ) : null}
       </section>

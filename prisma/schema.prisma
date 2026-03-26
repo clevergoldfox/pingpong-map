@@ -214,6 +214,8 @@ enum MatchStatus {
 
 enum JoinStatus {
   APPLIED
+  PENDING_PARTNER
+  PENDING_PAYMENT
   PAID // 支払い完了（大会ページ閲覧可の前提）
   CANCELED // キャンセル
   FORFEITED // 棄権（チェックインしない等）

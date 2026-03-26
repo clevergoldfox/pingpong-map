@@ -33,6 +33,13 @@ export async function POST(
   const memberCount = approvedMembers.length + 1 /* representative */
   const { category } = entry
 
+  if (category.type === "DOUBLES" && memberCount !== 2) {
+    return NextResponse.json(
+      { error: "ダブルスは2名（代表者＋パートナー1名）で確定できます" },
+      { status: 400 }
+    )
+  }
+
   if (category.teamMinMembers != null && memberCount < category.teamMinMembers) {
     return NextResponse.json(
       { error: `この種目の最小人数（${category.teamMinMembers}人）を満たしていません` },
@@ -68,27 +75,60 @@ export async function POST(
       },
     })
 
-    const team = await tx.team.create({
-      data: {
-        categoryId: entry.categoryId,
-        name: entry.teamName,
-      },
-    })
+    let team: { id: string } | null = null
+    if (category.type === "TEAM") {
+      const createdTeam = await tx.team.create({
+        data: {
+          categoryId: entry.categoryId,
+          name: entry.teamName,
+        },
+      })
 
-    // 代表者を TeamMember に追加
-    const membersData = [
-      {
-        teamId: team.id,
-        userId: entry.representativeUserId,
-        order: 0,
-      },
-      ...approvedMembers.map((m, idx) => ({
-        teamId: team.id,
-        userId: m.userId,
-        order: idx + 1,
-      })),
-    ]
-    await tx.teamMember.createMany({ data: membersData })
+      // 代表者を TeamMember に追加
+      const membersData = [
+        {
+          teamId: createdTeam.id,
+          userId: entry.representativeUserId,
+          order: 0,
+        },
+        ...approvedMembers.map((m, idx) => ({
+          teamId: createdTeam.id,
+          userId: m.userId,
+          order: idx + 1,
+        })),
+      ]
+      await tx.teamMember.createMany({ data: membersData })
+      team = createdTeam
+    }
+
+    const allUserIds = [entry.representativeUserId, ...approvedMembers.map((m) => m.userId)]
+    for (const memberUserId of allUserIds) {
+      const existing = await tx.tournamentParticipant.findUnique({
+        where: {
+          tournamentId_userId: {
+            tournamentId: entry.tournamentId,
+            userId: memberUserId,
+          },
+        },
+      })
+      await tx.tournamentParticipant.upsert({
+        where: {
+          tournamentId_userId: {
+            tournamentId: entry.tournamentId,
+            userId: memberUserId,
+          },
+        },
+        update: {
+          joinStatus: existing?.joinStatus === "PAID" ? "PAID" : "PENDING_PAYMENT",
+          canceledAt: null,
+        },
+        create: {
+          tournamentId: entry.tournamentId,
+          userId: memberUserId,
+          joinStatus: "PENDING_PAYMENT",
+        },
+      })
+    }
 
     return { updatedEntry, team }
   })
